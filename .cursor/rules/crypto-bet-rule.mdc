@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Project Rules: Crypto Bet
+
+## 1. Overview & Core Concept
+
+**Project Name:** "Crypto Bet" (working title)
+
+**One-Liner:** A decentralized prediction market platform on the Solana blockchain, acting as a "speculative intelligence hub" for the cryptocurrency market.
+
+**Key Differentiator:** We are NOT just another betting site. We are a data analysis tool that allows users to bet on their conclusions. The priority is to provide valuable insights into market narratives (e.g., AI, Memes, DeFi).
+
+**Core Analogy:** Think "Bet365 meets the Uniswap Analytics page." The interface should be as simple and direct as a betting site, but with the data depth of a professional DeFi tool.
+
+## 2. User Experience (UX) Pillars
+
+* **Betting Paradigm, Not Trading:** The UI must use betting terminology (`Odds`, `Stake`, `Winnings`, `Bet Slip`). **NEVER** use the "buy/sell shares" paradigm from Polymarket.
+* **Speed and Clarity:** The interface must be extremely fast, clean, and intuitive. The most important information (odds, sentiment data) must be immediately visible.
+* **Narrative-Driven:** The main navigation of the site is based on crypto narrative categories.
+* **Follow Our Wireframes:** Strictly adhere to the layouts we designed:
+    1.  **Home Page:** Featuring the "Trending Topics" module (a carousel with a detailed market view) and the narrative lists (compact view).
+    2.  **Market Detail Page:** A two-pillar layout with the chart/transaction feed on the left, and the action/intelligence panel (betting buttons, sentiment bar, stats) on the right.
+    3.  **Bet Slip:** Appears on the right sidebar only after a user clicks on an odds button.
+
+## 3. Technical Architecture & Tech Stack
+
+Strictly follow this technology stack. Do not introduce other tools without prior discussion.
+
+* **On-Chain (Solana Program):**
+    * **Framework:** **Anchor (`v0.29.0+`)**
+    * **Language:** **Rust**
+* **Frontend (Web Application):**
+    * **Framework:** **Next.js (`v14+`)**
+    * **Language:** **TypeScript** (use strict typing throughout the project).
+* **UI & Styling:**
+    * **CSS:** **Tailwind CSS**.
+    * **Components:** **Shadcn/ui**. Build the UI modularly using these components.
+* **State Management (Frontend):**
+    * **Client State:** **Zustand**.
+    * **Server State/Caching:** **TanStack Query (React Query) v5**.
+* **Data Visualization (Charts):**
+    * **Library:** **Recharts** or **Tremor**.
+* **Blockchain Interaction:**
+    * **Libraries:** Use the `@solana/wallet-adapter` ecosystem for wallet connections and `@coral-xyz/anchor` to interact with the on-chain program.
+* **Data Indexing & Backend:**
+    * **Primary Service:** **Helius** (for high-performance RPCs and Webhooks to feed our database).
+    * **Database:** **PostgreSQL** (hosted on Supabase or Railway).
+* **Deployment:**
+    * **Frontend:** **Vercel**.
+
+## 4. MVP Scope (What we are building now)
+
+Focus exclusively on the features defined for the MVP. Do not implement V2 features yet.
+
+* **In-Scope:** Full on-chain logic (create, bet, resolve, claim), Home Page with "Trending" module and narrative lists, Bet Slip, "My Bets" page, and essential data points (TVL, 24h Volume, Sentiment Bar, a simplified Sentiment Graph).
+* **Out-of-Scope for MVP:** Live transaction feed, collateral pie chart, advanced chart filters, user-created markets, search bar.
+
+## 5. Coding Guidelines & Best Practices
+
+* **Clean & Modular Code:** Write code that is easy to read, maintain, and test. Break down logic into small, reusable components and functions.
+* **Comments:** Comment on sections of code with complex logic, especially on-chain AMM calculations and data manipulation for charts.
+* **Security (On-Chain):** Security is paramount. Use all of Anchor's safety checks and constraints (`#[account(...)]`) to validate accounts and input data.
+* **Naming Conventions:** Follow the standard naming conventions for each language and framework (e.g., `camelCase` for variables in TS, `snake_case` in Rust).
