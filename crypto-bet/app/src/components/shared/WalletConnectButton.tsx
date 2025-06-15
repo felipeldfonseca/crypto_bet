@@ -15,7 +15,11 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ChevronDown, Copy, LogOut } from 'lucide-react';
 
-export const WalletConnectButton: React.FC = () => {
+interface WalletConnectButtonProps {
+  className?: string;
+}
+
+export function WalletConnectButton({ className }: WalletConnectButtonProps) {
   const { publicKey, disconnect } = useWallet();
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
@@ -59,7 +63,11 @@ export const WalletConnectButton: React.FC = () => {
 
   if (!publicKey) {
     return (
-      <Button onClick={handleConnect} className="rounded-full">
+      <Button 
+        variant="outline" 
+        className={className}
+        onClick={handleConnect}
+      >
         Connect Wallet
       </Button>
     );
@@ -68,7 +76,7 @@ export const WalletConnectButton: React.FC = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="rounded-full flex items-center gap-2">
+        <Button variant="outline" className={`rounded-full flex items-center gap-2 ${className}`}>
           {shortenAddress(publicKey.toString())}
           <ChevronDown className="h-4 w-4" />
         </Button>
@@ -99,4 +107,4 @@ export const WalletConnectButton: React.FC = () => {
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}; 
+} 

@@ -4,7 +4,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 export default function LandingPage() {
   return (
     <>
-      <Header />
+      <Header showNavigation={true} layout="landing" />
       <main className="flex flex-col items-center">
         <HeroSection />
       </main>

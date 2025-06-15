@@ -1,7 +1,7 @@
 import { WalletContextProvider } from '@/components/providers/WalletContextProvider';
 import { Header } from '@/components/layout/Header';
 
-export default function MarketsLayout({
+export default function SwapLayout({
   children,
 }: {
   children: React.ReactNode;
