@@ -1,12 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use solana_program::pubkey;
 
 // Use the correct program ID from Anchor.toml
 declare_id!("4Gd64thyhLeqyLxDz8Ae5Z98qXdqwJrcAYkS6g3Yzy5V");
 
 // Constants for supported tokens
 pub const SOL_MINT: Pubkey = Pubkey::new_from_array([0; 32]); // Native SOL (placeholder)
-pub const USDC_MINT: Pubkey = solana_program::pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // USDC mainnet
+pub const USDC_MINT: Pubkey = pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"); // USDC mainnet
 
 #[program]
 pub mod crypto_bet {
@@ -454,12 +455,15 @@ pub struct InitializeMarket<'info> {
     #[account(
         init_if_needed,
         payer = authority,
-        token::mint = USDC_MINT,
-        token::authority = market_vault,
+        token::mint = usdc_mint,
+        token::authority = market,
         seeds = [b"vault", market.key().as_ref()],
         bump
     )]
     pub market_vault: Option<Account<'info, TokenAccount>>,
+    
+    /// CHECK: USDC mint address
+    pub usdc_mint: Option<AccountInfo<'info>>,
     
     #[account(mut)]
     pub authority: Signer<'info>,

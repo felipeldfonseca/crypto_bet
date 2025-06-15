@@ -26,12 +26,12 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <PopoverProvider>
       <header className={`w-full h-20 flex items-center backdrop-blur-sm border-b transition-all duration-500 ${theme.getHeaderClasses()} ${theme.border}`}>
-        <div className="container mx-auto w-full max-w-[1120px] flex items-center justify-between px-6 md:px-10">
+      <div className="container mx-auto w-full max-w-[1120px] flex items-center justify-between px-6 md:px-10">
         {/* Left Side - Logo + Navigation (for app layout) */}
         <div className="flex items-center gap-8">
           <Link href="/" className={`text-2xl font-bold hover:opacity-80 transition-all duration-300 ${theme.isDramatic ? theme.accent : 'text-foreground'}`}>
-            Crypto Bet
-          </Link>
+          Crypto Bet
+        </Link>
 
           {/* Navigation for App Layout (left side) */}
           {showNavigation && layout === 'app' && (
@@ -86,17 +86,17 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Mode Toggle */}
           {showModeToggle && <CompactModeToggle />}
-          
-          {/* CTA Button or Wallet Button */}
-          {showWalletButton ? (
-            <WalletConnectButton />
-          ) : (
-            <Link href="/markets">
-              <Button className="rounded-full">
+
+        {/* CTA Button or Wallet Button */}
+        {showWalletButton ? (
+          <WalletConnectButton />
+        ) : (
+          <Link href="/markets">
+            <Button className="rounded-full">
                 {showNavigation ? 'Open App' : 'Launch App'}
-              </Button>
-            </Link>
-          )}
+            </Button>
+          </Link>
+        )}
         </div>
       </div>
     </header>

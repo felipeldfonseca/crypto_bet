@@ -63,7 +63,7 @@ export default function MarketsPage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Prediction Markets
-          </h1>
+        </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Create and participate in decentralized prediction markets on Solana.
           </p>
