@@ -4,9 +4,13 @@ A modern, responsive frontend for the Crypto Bet Solana-based betting applicatio
 
 ## 🚀 Features
 
-- **Landing Page**: Professional marketing page with hero section
+- **Landing Page**: Professional marketing page with hero section and navigation
+- **Dual-Mode UI**: Degen Mode (🚀 SOL) vs Stable Mode (🏦 USDC) with persistent state
+- **Jupiter Swap Integration**: Complete token conversion with real-time quotes and slippage protection
+- **Market Creation**: Comprehensive interface with validation, categories, and tag system
+- **Navigation System**: Aave-style dropdowns with smooth hover animations and layout-aware positioning
 - **Wallet Integration**: Seamless Solana wallet connectivity with Phantom, Solflare support
-- **Responsive Design**: Mobile-first approach with modern UI components
+- **Responsive Design**: Mobile-first approach with touch-friendly components
 - **TypeScript**: Full type safety throughout the application
 - **Modern Stack**: Next.js 14 App Router, React 18, Tailwind CSS
 
@@ -59,8 +63,10 @@ The application follows a clean, modern design inspired by top-tier crypto proje
 
 ## 🔗 Routes
 
-- `/` - Landing page with hero section and marketing content
-- `/markets` - Main application interface with wallet connectivity
+- `/` - Landing page with hero section and navigation system
+- `/markets` - Main application interface with market creation and wallet connectivity  
+- `/swap` - Dedicated swap page with Jupiter integration and mode-aware routing
+- Mode-aware routing with `?mode=stable` or `?mode=degen` query parameters
 
 ## 🔌 Wallet Integration
 
