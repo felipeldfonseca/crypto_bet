@@ -22,6 +22,15 @@ interface ModeConfig {
   color: string;
   bgColor: string;
   features: string[];
+  // Dramatic theming properties
+  isDramatic: boolean;
+  bodyBg: string;
+  headerBg: string;
+  cardBg: string;
+  textPrimary: string;
+  textSecondary: string;
+  accent: string;
+  border: string;
 }
 
 const MODE_CONFIGS: Record<BettingMode, ModeConfig> = {
@@ -37,7 +46,16 @@ const MODE_CONFIGS: Record<BettingMode, ModeConfig> = {
       'Higher potential returns',
       'Price volatility exposure',
       'Fast transaction settlements'
-    ]
+    ],
+    // Dramatic dark theme
+    isDramatic: true,
+    bodyBg: 'bg-slate-900',
+    headerBg: 'bg-slate-800/90',
+    cardBg: 'bg-slate-800/50',
+    textPrimary: 'text-white',
+    textSecondary: 'text-slate-300',
+    accent: 'text-orange-500',
+    border: 'border-slate-700'
   },
   stable: {
     name: 'Stable Mode',
@@ -51,7 +69,16 @@ const MODE_CONFIGS: Record<BettingMode, ModeConfig> = {
       'Predictable value',
       'Inflation protection',
       'Traditional finance feel'
-    ]
+    ],
+    // Light theme (existing)
+    isDramatic: false,
+    bodyBg: 'bg-white',
+    headerBg: 'bg-white/90',
+    cardBg: 'bg-white',
+    textPrimary: 'text-gray-900',
+    textSecondary: 'text-gray-600',
+    accent: 'text-blue-600',
+    border: 'border-gray-200'
   }
 };
 

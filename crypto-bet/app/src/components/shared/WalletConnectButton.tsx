@@ -5,6 +5,7 @@ import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { Button } from '@/components/ui/button';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,7 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
   const { connection } = useConnection();
   const { setVisible } = useWalletModal();
   const [balance, setBalance] = useState<number | null>(null);
+  const theme = useTheme();
 
   // Fetch SOL balance when wallet is connected
   useEffect(() => {
@@ -64,8 +66,12 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
   if (!publicKey) {
     return (
       <Button 
-        variant="outline" 
-        className={className}
+        variant="default"
+        className={`${className} ${
+          theme.isDramatic 
+            ? 'bg-orange-500 text-white hover:bg-orange-600 border-orange-500' 
+            : 'bg-slate-800 text-white hover:bg-slate-900 border-slate-800'
+        }`}
         onClick={handleConnect}
       >
         Connect Wallet
@@ -76,7 +82,11 @@ export function WalletConnectButton({ className }: WalletConnectButtonProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className={`rounded-full flex items-center gap-2 ${className}`}>
+        <Button variant="default" className={`rounded-full flex items-center gap-2 ${className} ${
+          theme.isDramatic 
+            ? 'bg-orange-500 text-white hover:bg-orange-600 border-orange-500' 
+            : 'bg-slate-800 text-white hover:bg-slate-900 border-slate-800'
+        }`}>
           {shortenAddress(publicKey.toString())}
           <ChevronDown className="h-4 w-4" />
         </Button>

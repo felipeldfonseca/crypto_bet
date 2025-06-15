@@ -10,7 +10,7 @@ export default function SwapLayout({
     <WalletContextProvider>
       <Header 
         showWalletButton={true} 
-        showModeToggle={true} 
+        showModeToggle={false} 
         showNavigation={true}
         layout="app" 
       />

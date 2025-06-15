@@ -3,6 +3,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useBettingMode, MODE_CONFIGS } from '@/components/providers/BettingModeProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { cn } from '@/lib/utils';
 
 interface ModeToggleProps {
@@ -18,6 +19,7 @@ export function ModeToggle({
 }: ModeToggleProps) {
   const { mode, toggleMode, getModeConfig } = useBettingMode();
   const currentConfig = getModeConfig();
+  const theme = useTheme();
   
   const sizeClasses = {
     sm: 'h-8 text-xs px-3',
@@ -26,7 +28,7 @@ export function ModeToggle({
   };
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex flex-col items-center gap-3', className)}>
       {/* Mode Toggle Button */}
       <Button
         onClick={toggleMode}
@@ -58,7 +60,7 @@ export function ModeToggle({
             className={cn(
               'h-2 w-8 rounded-full transition-all duration-300',
               mode === modeKey 
-                ? config.color.replace('text-', 'bg-')
+                ? (theme.isDramatic ? 'bg-orange-500' : 'bg-slate-800')
                 : 'bg-gray-200'
             )}
           />
@@ -115,23 +117,26 @@ interface CompactModeToggleProps {
 
 export function CompactModeToggle({ className }: CompactModeToggleProps) {
   const { mode, toggleMode } = useBettingMode();
+  const theme = useTheme();
   
   return (
     <button
       onClick={toggleMode}
       className={cn(
-        'relative w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2',
+        'relative w-14 h-7 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg',
         mode === 'degen' 
-          ? 'bg-orange-500 focus:ring-orange-500' 
-          : 'bg-blue-500 focus:ring-blue-500',
+          ? 'bg-orange-500 focus:ring-orange-500 shadow-orange-500/20' 
+          : 'bg-slate-800 focus:ring-slate-800 shadow-slate-800/20',
+        theme.isDramatic && 'ring-offset-slate-900',
         className
       )}
       aria-label={`Switch to ${mode === 'degen' ? 'stable' : 'degen'} mode`}
     >
       <span
         className={cn(
-          'absolute left-1 top-1 w-5 h-5 bg-white rounded-full transition-transform duration-300 flex items-center justify-center text-xs',
-          mode === 'stable' && 'transform translate-x-7'
+          'absolute left-1 top-1 w-5 h-5 rounded-full transition-all duration-500 flex items-center justify-center text-xs shadow-md',
+          mode === 'stable' && 'transform translate-x-7',
+          theme.isDramatic ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'
         )}
       >
         {mode === 'degen' ? '🚀' : '🏦'}

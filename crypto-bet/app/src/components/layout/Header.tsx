@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { WalletConnectButton } from '@/components/shared/WalletConnectButton';
 import { CompactModeToggle } from '@/components/shared/ModeToggle';
 import { NavigationPopover, PopoverProvider, NAVIGATION_CONFIG } from './NavigationPopover';
+import { useTheme } from '@/components/providers/ThemeProvider';
 
 interface HeaderProps {
   showWalletButton?: boolean;
@@ -20,13 +21,15 @@ export const Header: React.FC<HeaderProps> = ({
   showNavigation = false,
   layout = 'landing'
 }) => {
+  const theme = useTheme();
+  
   return (
     <PopoverProvider>
-      <header className="w-full h-20 flex items-center">
+      <header className={`w-full h-20 flex items-center backdrop-blur-sm border-b transition-all duration-500 ${theme.getHeaderClasses()} ${theme.border}`}>
         <div className="container mx-auto w-full max-w-[1120px] flex items-center justify-between px-6 md:px-10">
         {/* Left Side - Logo + Navigation (for app layout) */}
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-2xl font-bold text-foreground hover:opacity-80 transition-opacity">
+          <Link href="/" className={`text-2xl font-bold hover:opacity-80 transition-all duration-300 ${theme.isDramatic ? theme.accent : 'text-foreground'}`}>
             Crypto Bet
           </Link>
 
@@ -37,7 +40,6 @@ export const Header: React.FC<HeaderProps> = ({
                 id="products-app"
                 title={NAVIGATION_CONFIG.products.title}
                 items={NAVIGATION_CONFIG.products.items}
-                directHref={NAVIGATION_CONFIG.products.directHref}
               />
               <NavigationPopover
                 id="trade-app"
@@ -65,7 +67,6 @@ export const Header: React.FC<HeaderProps> = ({
                 id="products-landing"
                 title={NAVIGATION_CONFIG.products.title}
                 items={NAVIGATION_CONFIG.products.items}
-                directHref={NAVIGATION_CONFIG.products.directHref}
               />
               <NavigationPopover
                 id="trade-landing"

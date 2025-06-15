@@ -3,14 +3,12 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TokenSwap } from '@/components/shared/TokenSwap';
-import { ModeToggle, ModeInfoCard } from '@/components/shared/ModeToggle';
-import { Badge } from '@/components/ui/badge';
-import { useBettingMode } from '@/components/providers/BettingModeProvider';
+import { useTheme } from '@/components/providers/ThemeProvider';
+
 import { ArrowUpDown, Zap, Shield, DollarSign, TrendingUp } from 'lucide-react';
 
 export default function SwapPage() {
-  const { getModeConfig, preferredToken } = useBettingMode();
-  const modeConfig = getModeConfig();
+  const theme = useTheme();
 
   const handleSwapComplete = (signature: string) => {
     console.log('Swap completed:', signature);
@@ -34,104 +32,85 @@ export default function SwapPage() {
             </h1>
           </div>
           
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
+          <p className={`text-lg max-w-2xl mx-auto mb-6 ${theme.isDramatic ? theme.textSecondary : 'text-muted-foreground'}`}>
             Convert between SOL and USDC instantly with the best rates on Solana.
             Powered by Jupiter aggregation technology.
           </p>
 
-          {/* Mode Toggle */}
-          <div className="flex justify-center mb-6">
-            <ModeToggle size="lg" />
-          </div>
 
-          {/* Current Mode Badge */}
-          <Badge 
-            variant="outline" 
-            className={`${modeConfig.color} ${modeConfig.bgColor} px-4 py-2`}
-          >
-            <span className="mr-2">{modeConfig.icon}</span>
-            Currently in {modeConfig.name} - Swapping to {preferredToken}
-          </Badge>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-3 gap-8 mb-12">
-          {/* Main Swap Interface */}
-          <div className="lg:col-span-2">
-            <TokenSwap 
-              onSwapComplete={handleSwapComplete}
-              onError={handleSwapError}
-              className="max-w-none"
-            />
-          </div>
+        {/* Main Swap Interface */}
+        <div className="max-w-md mx-auto mb-12">
+          <TokenSwap 
+            onSwapComplete={handleSwapComplete}
+            onError={handleSwapError}
+          />
+        </div>
 
-          {/* Sidebar Info */}
-          <div className="space-y-6">
-            {/* Mode Information */}
-            <ModeInfoCard />
+        {/* Feature Cards Below Swap */}
+        <div className="grid md:grid-cols-2 gap-6 mb-12 max-w-4xl mx-auto">
+          {/* Swap Features */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Zap className="h-5 w-5 text-orange-500" />
+                Why Swap Here?
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-start gap-3">
+                <TrendingUp className="h-5 w-5 text-green-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Best Rates</p>
+                  <p className="text-xs text-muted-foreground">
+                    Jupiter aggregation finds optimal routes
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <Shield className="h-5 w-5 text-blue-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Secure Swaps</p>
+                  <p className="text-xs text-muted-foreground">
+                    Non-custodial, direct wallet transactions
+                  </p>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-3">
+                <DollarSign className="h-5 w-5 text-purple-500 mt-0.5" />
+                <div>
+                  <p className="font-medium text-sm">Low Fees</p>
+                  <p className="text-xs text-muted-foreground">
+                    Minimal slippage, competitive spreads
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-            {/* Swap Features */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-orange-500" />
-                  Why Swap Here?
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <TrendingUp className="h-5 w-5 text-green-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Best Rates</p>
-                    <p className="text-xs text-muted-foreground">
-                      Jupiter aggregation finds optimal routes
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <Shield className="h-5 w-5 text-blue-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Secure Swaps</p>
-                    <p className="text-xs text-muted-foreground">
-                      Non-custodial, direct wallet transactions
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="flex items-start gap-3">
-                  <DollarSign className="h-5 w-5 text-purple-500 mt-0.5" />
-                  <div>
-                    <p className="font-medium text-sm">Low Fees</p>
-                    <p className="text-xs text-muted-foreground">
-                      Minimal slippage, competitive spreads
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Stats */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Today's Volume</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">SOL/USDC</span>
-                  <span className="font-medium">$2.4M</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Total Swaps</span>
-                  <span className="font-medium">1,247</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Avg. Slippage</span>
-                  <span className="font-medium text-green-600">0.12%</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Quick Stats */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Today's Volume</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">SOL/USDC</span>
+                <span className="font-medium">$2.4M</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Total Swaps</span>
+                <span className="font-medium">1,247</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Avg. Slippage</span>
+                <span className="font-medium text-green-600">0.12%</span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* How It Works Section */}

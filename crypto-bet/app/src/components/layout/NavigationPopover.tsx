@@ -4,6 +4,8 @@ import React, { useState, useEffect, createContext, useContext } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { ChevronDown, ExternalLink } from 'lucide-react';
+import { useTheme } from '@/components/providers/ThemeProvider';
+import { useBettingMode } from '@/components/providers/BettingModeProvider';
 
 // Shared popover state context
 interface PopoverContextType {
@@ -72,6 +74,8 @@ export function NavigationPopover({
   id
 }: NavigationPopoverPropsExtended) {
   const { activePopover, setActivePopover, timeoutId, setTimeoutId } = usePopoverContext();
+  const { setMode } = useBettingMode();
+  const theme = useTheme();
   const isOpen = activePopover === id;
 
   const handleMouseEnter = () => {
@@ -115,7 +119,12 @@ export function NavigationPopover({
         
         {/* Trigger Button */}
         <button
-          className="flex items-center gap-1 px-3 py-2 text-sm font-medium text-foreground hover:text-primary transition-colors duration-200 relative z-10"
+          className={cn(
+            "flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors duration-200 relative z-10",
+            theme.isDramatic 
+              ? `${theme.textPrimary} hover:${theme.accent.replace('text-', 'text-')}`
+              : "text-foreground hover:text-primary"
+          )}
           aria-expanded={isOpen}
           aria-haspopup="true"
           onClick={handleDirectClick}
@@ -134,8 +143,11 @@ export function NavigationPopover({
           <div className="absolute top-full left-0 z-50 pt-2">
             <div
               className={cn(
-                'bg-white border border-gray-200 rounded-lg shadow-lg min-w-[280px] py-2',
-                'animate-in fade-in-0 slide-in-from-top-2 duration-200'
+                'rounded-lg shadow-lg min-w-[280px] py-2 backdrop-blur-sm',
+                'animate-in fade-in-0 slide-in-from-top-2 duration-200',
+                theme.isDramatic 
+                  ? `${theme.cardBg} ${theme.border} shadow-2xl shadow-black/20`
+                  : 'bg-white border border-gray-200'
               )}
             >
               {items.map((item, index) => (
@@ -145,29 +157,62 @@ export function NavigationPopover({
                       href={item.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors duration-150"
+                      className={cn(
+                        "flex items-center justify-between px-4 py-3 transition-colors duration-150",
+                        theme.isDramatic 
+                          ? "hover:bg-slate-700/50" 
+                          : "hover:bg-gray-50"
+                      )}
                       onClick={item.onClick}
                     >
                       <div>
-                        <div className="font-medium text-gray-900 text-sm">
+                        <div className={cn(
+                          "font-medium text-sm",
+                          theme.isDramatic ? theme.textPrimary : "text-gray-900"
+                        )}>
                           {item.title}
                         </div>
-                        <div className="text-xs text-gray-500 mt-0.5">
+                        <div className={cn(
+                          "text-xs mt-0.5",
+                          theme.isDramatic ? theme.textSecondary : "text-gray-500"
+                        )}>
                           {item.description}
                         </div>
                       </div>
-                      <ExternalLink className="h-4 w-4 text-gray-400" />
+                      <ExternalLink className={cn(
+                        "h-4 w-4",
+                        theme.isDramatic ? theme.textSecondary : "text-gray-400"
+                      )} />
                     </a>
                   ) : (
                     <Link
                       href={item.href}
-                      className="block px-4 py-3 hover:bg-gray-50 transition-colors duration-150"
-                      onClick={item.onClick}
+                      className={cn(
+                        "block px-4 py-3 transition-colors duration-150",
+                        theme.isDramatic 
+                          ? "hover:bg-slate-700/50" 
+                          : "hover:bg-gray-50"
+                      )}
+                      onClick={(e) => {
+                        // Handle mode switching for Products popover
+                        if (item.href.includes('mode=stable')) {
+                          setMode('stable');
+                        } else if (item.href.includes('mode=degen')) {
+                          setMode('degen');
+                        }
+                        item.onClick?.();
+                      }}
                     >
-                      <div className="font-medium text-gray-900 text-sm">
+                      <div className={cn(
+                        "font-medium text-sm",
+                        theme.isDramatic ? theme.textPrimary : "text-gray-900"
+                      )}>
                         {item.title}
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className={cn(
+                        "text-xs mt-0.5",
+                        theme.isDramatic ? theme.textSecondary : "text-gray-500"
+                      )}>
                         {item.description}
                       </div>
                     </Link>
@@ -186,7 +231,7 @@ export function NavigationPopover({
 export const NAVIGATION_CONFIG = {
   products: {
     title: 'Products',
-    directHref: '/markets', // Click "Products" → go to Stable mode by default
+    // Removed directHref to eliminate flickering - only popover navigation now
     items: [
       {
         title: 'Stable Mode',

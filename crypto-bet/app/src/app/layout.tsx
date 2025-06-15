@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { BettingModeProvider } from "@/components/providers/BettingModeProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -19,7 +20,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <BettingModeProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </BettingModeProvider>
       </body>
     </html>

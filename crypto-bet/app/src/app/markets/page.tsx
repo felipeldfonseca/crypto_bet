@@ -7,11 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { MarketCreationForm, MarketData } from '@/components/markets/MarketCreationForm';
 import { ModeToggle } from '@/components/shared/ModeToggle';
 import { TokenSwap } from '@/components/shared/TokenSwap';
+import { useTheme } from '@/components/providers/ThemeProvider';
 import { Plus, TrendingUp, Users, DollarSign } from 'lucide-react';
 
 export default function MarketsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
+  const theme = useTheme();
 
   const handleCreateMarket = async (marketData: MarketData) => {
     console.log('Creating market:', marketData);
@@ -76,8 +78,13 @@ export default function MarketsPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
           <Button 
             onClick={() => setShowCreateForm(!showCreateForm)}
+            variant="default"
             size="lg"
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${
+              theme.isDramatic 
+                ? 'bg-white text-slate-900 hover:bg-gray-100 border-white' 
+                : ''
+            }`}
           >
             <Plus className="h-5 w-5" />
             Create Market
@@ -85,9 +92,13 @@ export default function MarketsPage() {
           
           <Button 
             onClick={() => setShowSwapModal(!showSwapModal)}
-            variant="outline"
+            variant="default"
             size="lg"
-            className="flex items-center gap-2"
+            className={`flex items-center gap-2 ${
+              theme.isDramatic 
+                ? 'bg-white text-slate-900 hover:bg-gray-100 border-white' 
+                : ''
+            }`}
           >
             <TrendingUp className="h-5 w-5" />
             Token Swap

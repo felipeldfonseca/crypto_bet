@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ArrowRight, Coins, TrendingUp, Shield, Zap } from 'lucide-react';
-import { ModeToggle, ModeInfoCard } from '@/components/shared/ModeToggle';
+import { ModeInfoCard } from '@/components/shared/ModeToggle';
 import { TokenSwap } from '@/components/shared/TokenSwap';
 
 export const HeroSection: React.FC = () => {
@@ -26,10 +26,7 @@ export const HeroSection: React.FC = () => {
           Decimal odds, classic bet-slip and real-time market stats — built for speed on Solana.
         </p>
 
-        {/* Mode Selection */}
-        <div className="flex justify-center mb-8">
-          <ModeToggle size="lg" />
-        </div>
+
 
         {/* Feature Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
