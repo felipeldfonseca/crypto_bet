@@ -208,7 +208,7 @@ NEXT_PUBLIC_USDC_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v
 ### **V1.0 - Foundation** (Current)
 - [x] Secure smart contract
 - [x] Dual-mode support (SOL + USDC)
-- [ ] Jupiter swap integration
+- [x] Jupiter swap integration
 - [ ] Complete frontend
 - [ ] Comprehensive testing
 
