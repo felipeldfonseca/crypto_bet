@@ -57,13 +57,13 @@ export default React.memo(function SwapPage() {
 
   // Memoized event handlers
   const handleSwapComplete = useCallback((signature: string) => {
-    console.log('Swap completed successfully:', signature);
-    // TODO: Show success notification
+    // Success notification would be handled by the TokenSwap component
+    // Signature is logged securely within the component
   }, []);
 
   const handleSwapError = useCallback((error: string) => {
-    console.error('Swap failed:', error);
-    // TODO: Show error notification
+    // Error notification would be handled by the TokenSwap component
+    // Error is logged securely within the component
   }, []);
 
   // Memoized page title

@@ -29,6 +29,12 @@ pub mod crypto_bet {
         require!(category.len() <= 50, CryptoBetError::CategoryTooLong);
         require!(resolution_time > Clock::get()?.unix_timestamp, CryptoBetError::InvalidResolutionTime);
 
+        let max_duration = 365 * 24 * 60 * 60; // 1 year in seconds
+        require!(
+            resolution_time <= Clock::get()?.unix_timestamp + max_duration,
+            CryptoBetError::MarketDurationTooLong
+        );
+
         let market = &mut ctx.accounts.market;
         market.authority = ctx.accounts.authority.key();
         market.market_id = market_id;
@@ -80,6 +86,12 @@ pub mod crypto_bet {
         let market = &mut ctx.accounts.market;
         require!(market.state == MarketState::Active, CryptoBetError::MarketNotActive);
         require!(Clock::get()?.unix_timestamp < market.resolution_time, CryptoBetError::MarketExpired);
+
+        let new_total_volume = market.total_volume
+            .checked_add(amount)
+            .ok_or(CryptoBetError::MathOverflow)?;
+        
+        require!(new_total_volume <= MAX_MARKET_VOLUME, CryptoBetError::MarketVolumeTooHigh);
 
         // For prediction markets, use 1:1 share ratio (1 token = 1 share)
         let shares = amount;
@@ -148,9 +160,7 @@ pub mod crypto_bet {
                     .ok_or(CryptoBetError::MathOverflow)?;
             }
         }
-        market.total_volume = market.total_volume
-            .checked_add(amount)
-            .ok_or(CryptoBetError::MathOverflow)?;
+        market.total_volume = new_total_volume;
 
         // Initialize or update user position
         let position = &mut ctx.accounts.position;
@@ -161,6 +171,7 @@ pub mod crypto_bet {
             position.yes_shares = 0;
             position.no_shares = 0;
             position.total_invested = 0;
+            position.claimed = false;
             position.bump = ctx.bumps.position;
         }
 
@@ -246,6 +257,8 @@ pub mod crypto_bet {
         require!(market.state == MarketState::Resolved, CryptoBetError::MarketNotResolved);
         require!(position.user == ctx.accounts.user.key(), CryptoBetError::InvalidPosition);
 
+        require!(!position.claimed, CryptoBetError::AlreadyClaimed);
+
         let resolved_outcome = market.resolved_outcome.ok_or(CryptoBetError::MarketNotResolved)?;
         
         // Calculate winnings based on the resolved outcome
@@ -261,6 +274,24 @@ pub mod crypto_bet {
         let total_winning_pool = market.total_yes_amount
             .checked_add(market.total_no_amount)
             .ok_or(CryptoBetError::MathOverflow)?;
+
+        // Use correct share totals for calculation
+        let total_winning_shares = if resolved_outcome {
+            market.total_yes_shares
+        } else {
+            market.total_no_shares
+        };
+
+        require!(total_winning_shares > 0, CryptoBetError::NoWinningShares);
+
+        // Calculate proportional winnings: (user_winning_shares / total_winning_shares) * total_pool
+        let winnings = (winning_shares as u128)
+            .checked_mul(total_winning_pool as u128)
+            .ok_or(CryptoBetError::MathOverflow)?
+            .checked_div(total_winning_shares as u128)
+            .ok_or(CryptoBetError::DivisionByZero)? as u64;
+
+        require!(winnings > 0, CryptoBetError::NoWinningsAvailable);
 
         // Use correct share totals for calculation
         let total_winning_shares = if resolved_outcome {
@@ -346,6 +377,8 @@ pub mod crypto_bet {
             position.no_shares = 0;
         }
 
+        position.claimed = true;
+
         emit!(WinningsClaimed {
             market: market.key(),
             user: ctx.accounts.user.key(),
@@ -365,6 +398,8 @@ pub mod crypto_bet {
         require!(market.state == MarketState::Cancelled, CryptoBetError::MarketNotCancelled);
         require!(position.user == ctx.accounts.user.key(), CryptoBetError::InvalidPosition);
         require!(position.total_invested > 0, CryptoBetError::NoRefundAvailable);
+
+        require!(!position.claimed, CryptoBetError::AlreadyClaimed);
 
         let refund_amount = position.total_invested;
 
@@ -387,7 +422,7 @@ pub mod crypto_bet {
                     .ok_or(CryptoBetError::MathOverflow)?;
             }
             MarketType::Stable => {
-                // USDC refund
+                // USDC transfer from vault to user
                 let user_token_account = ctx.accounts.user_token_account
                     .as_ref()
                     .ok_or(CryptoBetError::MissingTokenAccount)?;
@@ -425,6 +460,8 @@ pub mod crypto_bet {
         position.yes_shares = 0;
         position.no_shares = 0;
         position.total_invested = 0;
+
+        position.claimed = true;
 
         emit!(RefundClaimed {
             market: market.key(),
@@ -635,11 +672,12 @@ pub struct Position {
     pub yes_shares: u64,        // 8
     pub no_shares: u64,         // 8
     pub total_invested: u64,    // 8
+    pub claimed: bool,          // 1 - 🔒 SECURITY: Track claim status to prevent double claiming
     pub bump: u8,               // 1
 }
 
 impl Position {
-    pub const LEN: usize = 32 + 32 + 8 + 8 + 8 + 1;
+    pub const LEN: usize = 32 + 32 + 8 + 8 + 8 + 1 + 1; // Updated size
 }
 
 // Enums and Types
@@ -730,12 +768,16 @@ pub enum CryptoBetError {
     CategoryTooLong,
     #[msg("Resolution time must be in the future")]
     InvalidResolutionTime,
+    #[msg("Market duration cannot exceed 1 year")]
+    MarketDurationTooLong,
     #[msg("Invalid bet amount")]
     InvalidAmount,
     #[msg("Bet amount is too small")]
     BetTooSmall,
     #[msg("Bet amount is too large")]
     BetTooLarge,
+    #[msg("Market volume too high")]
+    MarketVolumeTooHigh,
     #[msg("Market is not active")]
     MarketNotActive,
     #[msg("Market has expired")]
@@ -762,7 +804,7 @@ pub enum CryptoBetError {
     NoRefundAvailable,
     #[msg("Insufficient funds")]
     InsufficientFunds,
-    #[msg("Winnings already claimed")]
+    #[msg("Winnings or refund already claimed")]
     AlreadyClaimed,
     #[msg("Missing token account")]
     MissingTokenAccount,
@@ -777,4 +819,5 @@ pub enum CryptoBetError {
 // Constants
 
 pub const MIN_BET_AMOUNT: u64 = 1_000_000; // 0.001 SOL or 0.001 USDC
-pub const MAX_BET_AMOUNT: u64 = 1_000_000_000_000; // 1,000 SOL or 1,000 USDC 
+pub const MAX_BET_AMOUNT: u64 = 1_000_000_000_000; // 1,000 SOL or 1,000 USDC
+pub const MAX_MARKET_VOLUME: u64 = 10_000_000_000_000; // 10,000 SOL or 10,000 USDC 

@@ -66,19 +66,19 @@ pub mod crypto_bet {
 
         {
             let market = &ctx.accounts.market;
-            require!(market.state == MarketState::Active, CryptoBetError::MarketNotActive);
-            require!(Clock::get()?.unix_timestamp < market.resolution_time, CryptoBetError::MarketExpired);
+        require!(market.state == MarketState::Active, CryptoBetError::MarketNotActive);
+        require!(Clock::get()?.unix_timestamp < market.resolution_time, CryptoBetError::MarketExpired);
         }
 
         // SOL transfer
-        let cpi_context = CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
-            anchor_lang::system_program::Transfer {
-                from: ctx.accounts.user.to_account_info(),
-                to: ctx.accounts.market.to_account_info(),
-            },
-        );
-        anchor_lang::system_program::transfer(cpi_context, amount)?;
+                let cpi_context = CpiContext::new(
+                    ctx.accounts.system_program.to_account_info(),
+                    anchor_lang::system_program::Transfer {
+                        from: ctx.accounts.user.to_account_info(),
+                        to: ctx.accounts.market.to_account_info(),
+                    },
+                );
+                anchor_lang::system_program::transfer(cpi_context, amount)?;
 
         let market = &mut ctx.accounts.market;
 
