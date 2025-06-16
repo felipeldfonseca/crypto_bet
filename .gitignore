@@ -111,3 +111,5 @@ Desktop.ini
 # Temporary files
 *.tmp
 *.temp 
+# Archive folder (local only)
+docs/archive/
