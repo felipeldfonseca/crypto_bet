@@ -1,5 +1,5 @@
-import { WalletContextProvider } from '@/components/providers/WalletContextProvider';
 import { Header } from '@/components/layout/Header';
+import { WalletContextProvider } from '@/components/providers/WalletContextProvider';
 
 export default function MarketsLayout({
   children,
@@ -8,15 +8,8 @@ export default function MarketsLayout({
 }) {
   return (
     <WalletContextProvider>
-      <Header 
-        showWalletButton={true} 
-        showModeToggle={true} 
-        showNavigation={true}
-        layout="app" 
-      />
-      <main className="flex flex-col items-center">
-        {children}
-      </main>
+      <Header />
+      <main>{children}</main>
     </WalletContextProvider>
   );
 } 

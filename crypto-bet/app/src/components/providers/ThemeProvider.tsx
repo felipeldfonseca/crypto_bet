@@ -1,90 +1,124 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useBettingMode } from './BettingModeProvider';
+import { debounce, batchDOMUpdates } from '@/lib/performance';
 
 interface ThemeProviderProps {
   children: React.ReactNode;
 }
 
-export function ThemeProvider({ children }: ThemeProviderProps) {
+// Memoize theme configurations to prevent recreation
+const LIGHT_THEME_CONFIG = {
+  bodyBg: 'bg-white',
+  headerBg: 'bg-white/90',
+  cardBg: 'bg-white',
+  textPrimary: 'text-gray-900',
+  textSecondary: 'text-gray-600',
+  accent: 'text-blue-600',
+  border: 'border-gray-200',
+  isDramatic: false
+} as const;
+
+export const ThemeProvider = React.memo<ThemeProviderProps>(function ThemeProvider({ children }) {
   const { getModeConfig } = useBettingMode();
   const pathname = usePathname();
   const config = getModeConfig();
   const [isNavigating, setIsNavigating] = React.useState(false);
   
-  // Only apply dramatic theming on the markets page
-  const shouldUseDramaticTheme = pathname === '/markets' && config.isDramatic;
+  // Memoize theme decision to prevent recalculation
+  const shouldUseDramaticTheme = useMemo(() => 
+    pathname === '/markets' && config.isDramatic, 
+    [pathname, config.isDramatic]
+  );
 
-  // Track navigation changes
-  React.useEffect(() => {
+  // Memoize final theme config
+  const themeConfig = useMemo(() => 
+    shouldUseDramaticTheme ? config : LIGHT_THEME_CONFIG,
+    [shouldUseDramaticTheme, config]
+  );
+
+  // Optimize DOM manipulation with batch updates
+  const applyThemeToDOM = useCallback((theme: typeof themeConfig) => {
+    // Use requestAnimationFrame for better performance
+    requestAnimationFrame(() => {
+      const body = document.body;
+      const root = document.documentElement;
+      
+      // Batch all DOM updates together
+      batchDOMUpdates([
+        () => {
+          // Remove old classes
+          const classesToRemove = [
+            'bg-white', 'bg-slate-900',
+            'text-gray-900', 'text-white',
+            'transition-colors', 'duration-500'
+          ];
+          body.classList.remove(...classesToRemove);
+        },
+        () => {
+          // Add new classes
+          const classesToAdd = [
+            theme.bodyBg,
+            theme.textPrimary,
+            'transition-colors',
+            'duration-300' // Reduced duration for better performance
+          ];
+          body.classList.add(...classesToAdd);
+        },
+        () => {
+          // Update CSS custom properties
+          const cssProperties = {
+            '--theme-body-bg': theme.bodyBg,
+            '--theme-header-bg': theme.headerBg,
+            '--theme-card-bg': theme.cardBg,
+            '--theme-text-primary': theme.textPrimary,
+            '--theme-text-secondary': theme.textSecondary,
+            '--theme-accent': theme.accent,
+            '--theme-border': theme.border,
+            '--theme-is-dramatic': theme.isDramatic ? '1' : '0'
+          };
+
+          Object.entries(cssProperties).forEach(([property, value]) => {
+            root.style.setProperty(property, value);
+          });
+        }
+      ]);
+    });
+  }, []);
+
+  // Debounced theme application for better performance
+  const debouncedApplyTheme = useMemo(
+    () => debounce(applyThemeToDOM, 100),
+    [applyThemeToDOM]
+  );
+
+  // Track navigation changes with optimized timing
+  useEffect(() => {
     setIsNavigating(true);
-    const timer = setTimeout(() => setIsNavigating(false), 200);
+    const timer = setTimeout(() => setIsNavigating(false), 150); // Reduced timeout
     return () => clearTimeout(timer);
   }, [pathname]);
 
+  // Apply theme changes with performance optimization
   useEffect(() => {
     // Skip theme changes during navigation to prevent flickering
     if (isNavigating) return;
     
-    // Longer delay to prevent flickering during navigation
-    const timeoutId = setTimeout(() => {
-      // Apply theme to document body
-      const body = document.body;
-      
-      // Remove all existing theme classes
-      body.classList.remove(
-        'bg-white', 'bg-slate-900',
-        'text-gray-900', 'text-white',
-        'transition-colors', 'duration-500'
-      );
-      
-      // Apply theme classes based on page and mode
-      if (shouldUseDramaticTheme) {
-        body.classList.add(
-          config.bodyBg,
-          config.textPrimary,
-          'transition-colors',
-          'duration-500'
-        );
-      } else {
-        // Always use light theme for non-markets pages
-        body.classList.add(
-          'bg-white',
-          'text-gray-900',
-          'transition-colors',
-          'duration-500'
-        );
-      }
+    debouncedApplyTheme(themeConfig);
+  }, [isNavigating, themeConfig, debouncedApplyTheme]);
 
-      // Apply CSS custom properties for dynamic theming
-      const themeConfig = shouldUseDramaticTheme ? config : {
-        bodyBg: 'bg-white',
-        headerBg: 'bg-white/90',
-        cardBg: 'bg-white',
-        textPrimary: 'text-gray-900',
-        textSecondary: 'text-gray-600',
-        accent: 'text-blue-600',
-        border: 'border-gray-200',
-        isDramatic: false
-      };
-
-      document.documentElement.style.setProperty('--theme-body-bg', themeConfig.bodyBg);
-      document.documentElement.style.setProperty('--theme-header-bg', themeConfig.headerBg);
-      document.documentElement.style.setProperty('--theme-card-bg', themeConfig.cardBg);
-      document.documentElement.style.setProperty('--theme-text-primary', themeConfig.textPrimary);
-      document.documentElement.style.setProperty('--theme-text-secondary', themeConfig.textSecondary);
-      document.documentElement.style.setProperty('--theme-accent', themeConfig.accent);
-      document.documentElement.style.setProperty('--theme-border', themeConfig.border);
-      document.documentElement.style.setProperty('--theme-is-dramatic', themeConfig.isDramatic ? '1' : '0');
-    }, 150); // 150ms delay to prevent flickering
-
-    return () => clearTimeout(timeoutId);
-  }, [config, shouldUseDramaticTheme, pathname, isNavigating]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      // Cancel any pending debounced calls
+      debouncedApplyTheme.cancel();
+    };
+  }, [debouncedApplyTheme]);
 
   return <>{children}</>;
-}
+});
 
 // Hook to get current theme classes
 export function useTheme() {

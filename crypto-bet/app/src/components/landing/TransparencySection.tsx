@@ -1,7 +1,60 @@
 import React from 'react';
-import { Eye, Code, Shield, GitBranch, FileCode } from 'lucide-react';
+import { Eye, Code, Shield, GitBranch, FileCode, BarChart3, TrendingUp, Users } from 'lucide-react';
 
-export const TransparencySection: React.FC = () => {
+// Memoized stat card component
+const StatCard = React.memo<{
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+  trend?: string;
+}>(function StatCard({ icon, value, label, trend }) {
+  return (
+    <div className="bg-background rounded-lg p-6 border">
+      <div className="flex items-center justify-between mb-4">
+        <div className="p-2 rounded-lg bg-green-500/10">
+          {icon}
+        </div>
+        {trend && (
+          <span className="text-sm text-green-600 font-medium">{trend}</span>
+        )}
+      </div>
+      <div className="text-2xl font-bold mb-1">{value}</div>
+      <div className="text-sm text-muted-foreground">{label}</div>
+    </div>
+  );
+});
+
+// Memoized stats grid component
+const StatsGrid = React.memo(function StatsGrid() {
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <StatCard
+        icon={<BarChart3 className="h-5 w-5 text-green-500" />}
+        value="$2.4M"
+        label="Total Volume"
+        trend="+12%"
+      />
+      <StatCard
+        icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+        value="847"
+        label="Markets Created"
+      />
+      <StatCard
+        icon={<Users className="h-5 w-5 text-green-500" />}
+        value="12.3K"
+        label="Active Traders"
+        trend="+8%"
+      />
+      <StatCard
+        icon={<BarChart3 className="h-5 w-5 text-green-500" />}
+        value="99.7%"
+        label="Uptime"
+      />
+    </div>
+  );
+});
+
+export const TransparencySection = React.memo(function TransparencySection() {
   return (
     <section className="w-full py-16 bg-muted/30">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
@@ -69,4 +122,4 @@ export const TransparencySection: React.FC = () => {
       </div>
     </section>
   );
-}; 
+}); 

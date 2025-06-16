@@ -3,7 +3,19 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
-export const CTASection: React.FC = () => {
+// Memoized launch button component
+const LaunchAppButton = React.memo(function LaunchAppButton() {
+  return (
+    <Link href="/markets">
+      <Button size="lg" className="rounded-full flex items-center gap-2 text-lg px-8 py-6">
+        Launch App
+        <ArrowRight className="h-5 w-5" />
+      </Button>
+    </Link>
+  );
+});
+
+export const CTASection = React.memo(function CTASection() {
   return (
     <section className="w-full py-20 bg-muted/30">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
@@ -15,15 +27,10 @@ export const CTASection: React.FC = () => {
             Connect your wallet, explore live narratives, and experience betting at Solana speed.
           </p>
           <div className="flex justify-center">
-            <Link href="/markets">
-              <Button size="lg" className="rounded-full flex items-center gap-2 text-lg px-8 py-6">
-                Launch App
-                <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
+            <LaunchAppButton />
           </div>
         </div>
       </div>
     </section>
   );
-}; 
+}); 

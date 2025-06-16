@@ -1,105 +1,119 @@
 "use client"
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { NavigationPopover, PopoverProvider } from './NavigationPopover';
 import { WalletConnectButton } from '@/components/shared/WalletConnectButton';
 import { CompactModeToggle } from '@/components/shared/ModeToggle';
-import { NavigationPopover, PopoverProvider, NAVIGATION_CONFIG } from './NavigationPopover';
 import { useTheme } from '@/components/providers/ThemeProvider';
 
 interface HeaderProps {
-  showWalletButton?: boolean;
-  showModeToggle?: boolean;
-  showNavigation?: boolean;
-  layout?: 'landing' | 'app';
+  className?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  showWalletButton = false,
-  showModeToggle = false,
-  showNavigation = false,
-  layout = 'landing'
-}) => {
+// Memoized navigation items to prevent recreation
+const NAVIGATION_ITEMS = [
+  {
+    title: 'Markets',
+    href: '/markets',
+    description: 'Browse active prediction markets'
+  },
+  {
+    title: 'Swap',
+    href: '/swap', 
+    description: 'Exchange tokens instantly'
+  }
+] as const;
+
+// Memoized logo component
+const Logo = React.memo(function Logo() {
+  return (
+    <Link href="/" className="flex items-center gap-2">
+      <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
+        <span className="text-white font-bold text-sm">CB</span>
+      </div>
+      <span className="font-bold text-xl">Crypto Bet</span>
+    </Link>
+  );
+});
+
+// Memoized navigation menu component
+const NavigationMenu = React.memo(function NavigationMenu() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="hidden md:flex items-center gap-6">
+      {NAVIGATION_ITEMS.map((item) => {
+        const isActive = pathname === item.href;
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              "text-sm font-medium transition-colors hover:text-primary",
+              isActive ? "text-primary" : "text-muted-foreground"
+            )}
+          >
+            {item.title}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+});
+
+// Memoized mobile navigation component
+const MobileNavigation = React.memo(function MobileNavigation() {
+  return (
+    <div className="md:hidden">
+      <NavigationPopover
+        title="Menu"
+        items={NAVIGATION_ITEMS}
+        id="mobile-nav"
+      />
+    </div>
+  );
+});
+
+// Memoized header actions component
+const HeaderActions = React.memo(function HeaderActions() {
+  return (
+    <div className="flex items-center gap-3">
+      <CompactModeToggle />
+      <WalletConnectButton />
+    </div>
+  );
+});
+
+export const Header = React.memo<HeaderProps>(function Header({ 
+  className 
+}) {
   const theme = useTheme();
-  
+
+  // Memoized header classes
+  const headerClasses = useMemo(() => cn(
+    'sticky top-0 z-50 w-full border-b backdrop-blur-sm transition-colors duration-200',
+    theme.headerBg,
+    className
+  ), [theme.headerBg, className]);
+
   return (
     <PopoverProvider>
-      <header className={`w-full h-20 flex items-center backdrop-blur-sm border-b transition-all duration-500 ${theme.getHeaderClasses()} ${theme.border}`}>
-      <div className="container mx-auto w-full max-w-[1120px] flex items-center justify-between px-6 md:px-10">
-        {/* Left Side - Logo + Navigation (for app layout) */}
-        <div className="flex items-center gap-8">
-          <Link href="/" className={`text-2xl font-bold hover:opacity-80 transition-all duration-300 ${theme.isDramatic ? theme.accent : 'text-foreground'}`}>
-          Crypto Bet
-        </Link>
-
-          {/* Navigation for App Layout (left side) */}
-          {showNavigation && layout === 'app' && (
-            <nav className="hidden md:flex items-center gap-2">
-              <NavigationPopover
-                id="products-app"
-                title={NAVIGATION_CONFIG.products.title}
-                items={NAVIGATION_CONFIG.products.items}
-              />
-              <NavigationPopover
-                id="trade-app"
-                title={NAVIGATION_CONFIG.trade.title}
-                items={NAVIGATION_CONFIG.trade.items}
-                directHref={NAVIGATION_CONFIG.trade.directHref}
-              />
-              <NavigationPopover
-                id="developers-app"
-                title={NAVIGATION_CONFIG.developers.title}
-                items={NAVIGATION_CONFIG.developers.items}
-                directHref={NAVIGATION_CONFIG.developers.directHref}
-                directExternal={NAVIGATION_CONFIG.developers.directExternal}
-              />
-            </nav>
-          )}
+      <header className={headerClasses}>
+        <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
+          <div className="flex h-16 items-center justify-between">
+            <Logo />
+            
+            <NavigationMenu />
+            
+            <HeaderActions />
+            
+            <MobileNavigation />
+          </div>
         </div>
-
-        {/* Right Side - Navigation (for landing) + Controls */}
-        <div className="flex items-center gap-4">
-          {/* Navigation for Landing Layout (right side) */}
-          {showNavigation && layout === 'landing' && (
-            <nav className="hidden md:flex items-center gap-2 mr-4">
-              <NavigationPopover
-                id="products-landing"
-                title={NAVIGATION_CONFIG.products.title}
-                items={NAVIGATION_CONFIG.products.items}
-              />
-              <NavigationPopover
-                id="trade-landing"
-                title={NAVIGATION_CONFIG.trade.title}
-                items={NAVIGATION_CONFIG.trade.items}
-                directHref={NAVIGATION_CONFIG.trade.directHref}
-              />
-              <NavigationPopover
-                id="developers-landing"
-                title={NAVIGATION_CONFIG.developers.title}
-                items={NAVIGATION_CONFIG.developers.items}
-                directHref={NAVIGATION_CONFIG.developers.directHref}
-                directExternal={NAVIGATION_CONFIG.developers.directExternal}
-              />
-            </nav>
-          )}
-
-          {/* Mode Toggle */}
-          {showModeToggle && <CompactModeToggle />}
-
-        {/* CTA Button or Wallet Button */}
-        {showWalletButton ? (
-          <WalletConnectButton />
-        ) : (
-          <Link href="/markets">
-            <Button className="rounded-full">
-                {showNavigation ? 'Open App' : 'Launch App'}
-            </Button>
-          </Link>
-        )}
-        </div>
-      </div>
-    </header>
+      </header>
     </PopoverProvider>
   );
-}; 
+}); 

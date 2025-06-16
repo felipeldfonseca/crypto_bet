@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,19 +8,106 @@ import { MarketCreationForm, MarketData } from '@/components/markets/MarketCreat
 import { ModeToggle } from '@/components/shared/ModeToggle';
 import { TokenSwap } from '@/components/shared/TokenSwap';
 import { useTheme } from '@/components/providers/ThemeProvider';
-import { Plus, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { Plus, TrendingUp, Users, DollarSign, ArrowLeftRight } from 'lucide-react';
+import { useBettingMode } from '@/components/providers/BettingModeProvider';
 
-export default function MarketsPage() {
+// Memoized modal component
+const Modal = React.memo<{
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  children: React.ReactNode;
+}>(function Modal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-background rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-6 border-b">
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            ×
+          </Button>
+        </div>
+        <div className="p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// Memoized empty state component
+const EmptyMarketsState = React.memo(function EmptyMarketsState() {
+  const { getModeConfig } = useBettingMode();
+  const config = getModeConfig();
+
+  return (
+    <div className="text-center py-16">
+      <div className="text-6xl mb-4">{config.icon}</div>
+      <h3 className="text-2xl font-bold mb-2">No Markets Yet</h3>
+      <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+        Be the first to create a prediction market in {config.name} mode. 
+        Set the odds and let others bet on the outcome.
+      </p>
+    </div>
+  );
+});
+
+// Memoized action buttons component
+const ActionButtons = React.memo<{
+  onCreateMarket: () => void;
+  onOpenSwap: () => void;
+}>(function ActionButtons({ onCreateMarket, onOpenSwap }) {
+  return (
+    <div className="flex gap-4">
+      <Button onClick={onCreateMarket} className="flex items-center gap-2">
+        <Plus className="h-4 w-4" />
+        Create Market
+      </Button>
+      <Button variant="outline" onClick={onOpenSwap} className="flex items-center gap-2">
+        <ArrowLeftRight className="h-4 w-4" />
+        Token Swap
+      </Button>
+    </div>
+  );
+});
+
+export default React.memo(function MarketsPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showSwapModal, setShowSwapModal] = useState(false);
   const theme = useTheme();
+  const { getModeConfig } = useBettingMode();
+  const config = getModeConfig();
 
-  const handleCreateMarket = async (marketData: MarketData) => {
+  // Memoized event handlers
+  const handleCreateMarket = useCallback(async (marketData: MarketData) => {
     console.log('Creating market:', marketData);
     // TODO: Implement actual market creation logic with smart contract
     alert('Market creation functionality will be implemented with smart contract integration!');
     setShowCreateForm(false);
-  };
+  }, []);
+
+  const handleCloseCreateForm = useCallback(() => {
+    setShowCreateForm(false);
+  }, []);
+
+  const handleOpenSwap = useCallback(() => {
+    setShowSwapModal(true);
+  }, []);
+
+  const handleCloseSwap = useCallback(() => {
+    setShowSwapModal(false);
+  }, []);
+
+  const handleSwapComplete = useCallback((signature: string) => {
+    console.log('Swap completed:', signature);
+    setShowSwapModal(false);
+  }, []);
+
+  const handleSwapError = useCallback((error: string) => {
+    console.error('Swap error:', error);
+  }, []);
 
   // Mock market data for demonstration
   const mockMarkets = [
@@ -56,95 +143,77 @@ export default function MarketsPage() {
     }
   ];
 
+  // Memoized page title
+  const pageTitle = useMemo(() => 
+    `${config.name} Markets`, 
+    [config.name]
+  );
+
   return (
     <section className="w-full pt-12 pb-24">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            Prediction Markets
-        </h1>
+            {pageTitle}
+          </h1>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-6">
             Create and participate in decentralized prediction markets on Solana.
           </p>
           
           {/* Mode Toggle */}
           <div className="flex justify-center mb-6">
-            <ModeToggle size="lg" />
+            <ModeToggle showInfo={true} />
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-          <Button 
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            variant="default"
-            size="lg"
-            className={`flex items-center gap-2 ${
-              theme.isDramatic 
-                ? 'bg-white text-slate-900 hover:bg-gray-100 border-white' 
-                : ''
-            }`}
-          >
-            <Plus className="h-5 w-5" />
-            Create Market
-          </Button>
-          
-          <Button 
-            onClick={() => setShowSwapModal(!showSwapModal)}
-            variant="default"
-            size="lg"
-            className={`flex items-center gap-2 ${
-              theme.isDramatic 
-                ? 'bg-white text-slate-900 hover:bg-gray-100 border-white' 
-                : ''
-            }`}
-          >
-            <TrendingUp className="h-5 w-5" />
-            Token Swap
-          </Button>
+          <ActionButtons 
+            onCreateMarket={() => setShowCreateForm(true)}
+            onOpenSwap={() => setShowSwapModal(true)}
+          />
         </div>
 
         {/* Market Creation Form */}
-        {showCreateForm && (
-          <div className="mb-12">
-            <MarketCreationForm 
-              onSubmit={handleCreateMarket}
-              className="mb-8"
-            />
-            <div className="text-center">
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowCreateForm(false)}
-              >
-                Cancel
-              </Button>
-            </div>
+        <Modal
+          isOpen={showCreateForm}
+          onClose={handleCloseCreateForm}
+          title="Create New Market"
+        >
+          <MarketCreationForm 
+            onSubmit={handleCreateMarket}
+            className="mb-8"
+          />
+          <div className="text-center">
+            <Button 
+              variant="ghost" 
+              onClick={handleCloseCreateForm}
+            >
+              Cancel
+            </Button>
           </div>
-        )}
+        </Modal>
 
         {/* Token Swap Modal */}
-        {showSwapModal && (
-          <div className="mb-12">
-            <TokenSwap 
-              onSwapComplete={(signature) => {
-                console.log('Swap completed:', signature);
-                setShowSwapModal(false);
-              }}
-              onError={(error) => {
-                console.error('Swap error:', error);
-              }}
-            />
-            <div className="text-center mt-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowSwapModal(false)}
-              >
-                Close Swap
-              </Button>
-            </div>
+        <Modal
+          isOpen={showSwapModal}
+          onClose={handleCloseSwap}
+          title="Token Swap"
+        >
+          <TokenSwap 
+            onSwapComplete={handleSwapComplete}
+            onError={handleSwapError}
+          />
+          <div className="text-center mt-4">
+            <Button 
+              variant="ghost" 
+              onClick={handleCloseSwap}
+            >
+              Close Swap
+            </Button>
           </div>
-        )}
+        </Modal>
 
         {/* Markets Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -206,18 +275,9 @@ export default function MarketsPage() {
 
         {/* Empty State */}
         {mockMarkets.length === 0 && (
-          <div className="text-center py-12">
-            <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-xl font-semibold mb-2">No markets yet</h3>
-            <p className="text-muted-foreground mb-4">
-              Be the first to create a prediction market!
-            </p>
-            <Button onClick={() => setShowCreateForm(true)}>
-              Create First Market
-            </Button>
-          </div>
+          <EmptyMarketsState />
         )}
       </div>
     </section>
   );
-} 
+}); 

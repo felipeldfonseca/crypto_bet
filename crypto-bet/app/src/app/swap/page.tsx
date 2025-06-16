@@ -1,24 +1,76 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TokenSwap } from '@/components/shared/TokenSwap';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { ModeToggle } from '@/components/shared/ModeToggle';
+import { useBettingMode } from '@/components/providers/BettingModeProvider';
+import { ArrowUpDown, Zap, Shield, DollarSign, TrendingUp, ArrowLeftRight } from 'lucide-react';
 
-import { ArrowUpDown, Zap, Shield, DollarSign, TrendingUp } from 'lucide-react';
+// Memoized feature card component
+const FeatureCard = React.memo<{
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+}>(function FeatureCard({ icon, title, description }) {
+  return (
+    <div className="text-center p-6 rounded-lg border bg-card">
+      <div className="flex justify-center mb-4">
+        <div className="p-3 rounded-full bg-primary/10">
+          {icon}
+        </div>
+      </div>
+      <h3 className="font-semibold mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  );
+});
 
-export default function SwapPage() {
+// Memoized features section
+const FeaturesSection = React.memo(function FeaturesSection() {
+  return (
+    <div className="grid md:grid-cols-3 gap-6 mb-12">
+      <FeatureCard
+        icon={<Zap className="h-6 w-6 text-primary" />}
+        title="Lightning Fast"
+        description="Powered by Jupiter aggregator for best rates and minimal slippage"
+      />
+      <FeatureCard
+        icon={<Shield className="h-6 w-6 text-primary" />}
+        title="Secure & Trustless"
+        description="Non-custodial swaps directly from your wallet"
+      />
+      <FeatureCard
+        icon={<ArrowLeftRight className="h-6 w-6 text-primary" />}
+        title="Best Rates"
+        description="Automatically finds the best price across all DEXs"
+      />
+    </div>
+  );
+});
+
+export default React.memo(function SwapPage() {
   const theme = useTheme();
+  const { getModeConfig } = useBettingMode();
+  const config = getModeConfig();
 
-  const handleSwapComplete = (signature: string) => {
-    console.log('Swap completed:', signature);
-    // TODO: Add success notification/toast
-  };
+  // Memoized event handlers
+  const handleSwapComplete = useCallback((signature: string) => {
+    console.log('Swap completed successfully:', signature);
+    // TODO: Show success notification
+  }, []);
 
-  const handleSwapError = (error: string) => {
-    console.error('Swap error:', error);
-    // TODO: Add error notification/toast
-  };
+  const handleSwapError = useCallback((error: string) => {
+    console.error('Swap failed:', error);
+    // TODO: Show error notification
+  }, []);
+
+  // Memoized page title
+  const pageTitle = useMemo(() => 
+    `Token Swap - ${config.name} Mode`, 
+    [config.name]
+  );
 
   return (
     <section className="w-full pt-12 pb-24 min-h-screen">
@@ -28,17 +80,22 @@ export default function SwapPage() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <ArrowUpDown className="h-8 w-8 text-primary" />
             <h1 className="text-4xl md:text-5xl font-bold">
-              Token Swap
+              {pageTitle}
             </h1>
           </div>
           
           <p className={`text-lg max-w-2xl mx-auto mb-6 ${theme.isDramatic ? theme.textSecondary : 'text-muted-foreground'}`}>
-            Convert between SOL and USDC instantly with the best rates on Solana.
-            Powered by Jupiter aggregation technology.
+            Exchange tokens instantly with the best rates on Solana
           </p>
 
-
+          {/* Mode Toggle */}
+          <div className="flex justify-center">
+            <ModeToggle showInfo={true} />
+          </div>
         </div>
+
+        {/* Features */}
+        <FeaturesSection />
 
         {/* Main Swap Interface */}
         <div className="max-w-md mx-auto mb-12">
@@ -178,4 +235,4 @@ export default function SwapPage() {
       </div>
     </section>
   );
-} 
+}); 

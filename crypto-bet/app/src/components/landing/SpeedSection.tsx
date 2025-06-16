@@ -1,15 +1,22 @@
 import React from 'react';
 import { Zap } from 'lucide-react';
 
-export const SpeedSection: React.FC = () => {
+// Memoized icon component
+const SpeedIcon = React.memo(function SpeedIcon() {
+  return (
+    <div className="p-4 rounded-full bg-orange-500/10">
+      <Zap className="h-12 w-12 text-orange-500" />
+    </div>
+  );
+});
+
+export const SpeedSection = React.memo(function SpeedSection() {
   return (
     <section className="w-full py-16">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
         <div className="text-center max-w-4xl mx-auto">
           <div className="flex justify-center mb-6">
-            <div className="p-4 rounded-full bg-orange-500/10">
-              <Zap className="h-12 w-12 text-orange-500" />
-            </div>
+            <SpeedIcon />
           </div>
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Blink‑and‑it's‑done.
@@ -21,4 +28,4 @@ export const SpeedSection: React.FC = () => {
       </div>
     </section>
   );
-}; 
+}); 

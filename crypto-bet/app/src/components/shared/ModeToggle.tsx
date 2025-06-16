@@ -1,146 +1,188 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { useBettingMode, MODE_CONFIGS } from '@/components/providers/BettingModeProvider';
-import { useTheme } from '@/components/providers/ThemeProvider';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useBettingMode } from '@/components/providers/BettingModeProvider';
+import { Shield, TrendingUp } from 'lucide-react';
 
 interface ModeToggleProps {
   className?: string;
-  size?: 'sm' | 'md' | 'lg';
-  showLabels?: boolean;
+  showInfo?: boolean;
 }
 
-export function ModeToggle({ 
-  className,
-  size = 'md',
-  showLabels = true 
-}: ModeToggleProps) {
-  const { mode, toggleMode, getModeConfig } = useBettingMode();
-  const currentConfig = getModeConfig();
-  const theme = useTheme();
-  
-  const sizeClasses = {
-    sm: 'h-8 text-xs px-3',
-    md: 'h-10 text-sm px-4',
-    lg: 'h-12 text-base px-6'
-  };
+// Memoized mode button component
+const ModeButton = React.memo<{
+  isActive: boolean;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+}>(function ModeButton({ isActive, icon, title, description, onClick }) {
+  const buttonClasses = useMemo(() => cn(
+    "flex flex-col items-center gap-2 p-4 h-auto transition-all duration-200",
+    isActive 
+      ? "bg-primary text-primary-foreground shadow-md" 
+      : "bg-muted hover:bg-muted/80"
+  ), [isActive]);
 
   return (
-    <div className={cn('flex flex-col items-center gap-3', className)}>
-      {/* Mode Toggle Button */}
-      <Button
-        onClick={toggleMode}
-        variant="outline"
-        size="sm"
-        className={cn(
-          'relative transition-all duration-300 border-2 font-medium',
-          currentConfig.bgColor,
-          currentConfig.color,
-          sizeClasses[size],
-          'hover:shadow-md active:scale-95'
-        )}
-      >
-        <span className="flex items-center gap-2">
-          <span className="text-base">{currentConfig.icon}</span>
-          {showLabels && (
-            <span className="font-semibold">
-              {currentConfig.name}
-            </span>
-          )}
-        </span>
-      </Button>
-
-      {/* Mode Indicator Pills */}
-      <div className="hidden sm:flex items-center gap-1">
-        {Object.entries(MODE_CONFIGS).map(([modeKey, config]) => (
-          <div
-            key={modeKey}
-            className={cn(
-              'h-2 w-8 rounded-full transition-all duration-300',
-              mode === modeKey 
-                ? (theme.isDramatic ? 'bg-orange-500' : 'bg-slate-800')
-                : 'bg-gray-200'
-            )}
-          />
-        ))}
+    <Button
+      variant={isActive ? "default" : "outline"}
+      onClick={onClick}
+      className={buttonClasses}
+    >
+      {icon}
+      <div className="text-center">
+        <div className="font-semibold">{title}</div>
+        <div className="text-xs opacity-80">{description}</div>
       </div>
+    </Button>
+  );
+});
+
+export const ModeToggle = React.memo<ModeToggleProps>(function ModeToggle({
+  className,
+  showInfo = true
+}) {
+  const { mode, setMode, getModeConfig } = useBettingMode();
+  const modeConfig = getModeConfig();
+
+  // Memoized mode handlers
+  const handleStableMode = useCallback(() => {
+    setMode('stable');
+  }, [setMode]);
+
+  const handleDegenMode = useCallback(() => {
+    setMode('degen');
+  }, [setMode]);
+
+  return (
+    <div className={cn('space-y-4', className)}>
+      <div className="grid grid-cols-2 gap-4">
+        <ModeButton
+          isActive={mode === 'stable'}
+          icon={<Shield className="h-6 w-6" />}
+          title="Stable"
+          description="USDC betting"
+          onClick={handleStableMode}
+        />
+        
+        <ModeButton
+          isActive={mode === 'degen'}
+          icon={<TrendingUp className="h-6 w-6" />}
+          title="Degen"
+          description="SOL betting"
+          onClick={handleDegenMode}
+        />
+      </div>
+
+      {showInfo && (
+        <div className="text-center">
+          <Badge variant="outline" className={modeConfig.color}>
+            Current: {modeConfig.name} Mode ({modeConfig.token})
+          </Badge>
+        </div>
+      )}
     </div>
   );
-}
+});
 
 interface ModeInfoCardProps {
   className?: string;
 }
 
-export function ModeInfoCard({ className }: ModeInfoCardProps) {
-  const { getModeConfig } = useBettingMode();
+export const ModeInfoCard = React.memo<ModeInfoCardProps>(function ModeInfoCard({ 
+  className 
+}) {
+  const { mode, getModeConfig } = useBettingMode();
   const config = getModeConfig();
 
+  // Memoized card content
+  const cardContent = useMemo(() => ({
+    stable: {
+      title: "Stable Mode Active",
+      description: "You're betting with USDC for predictable, stable wagering.",
+      benefits: [
+        "No token volatility risk",
+        "Predictable bet values",
+        "Perfect for conservative trading"
+      ]
+    },
+    degen: {
+      title: "Degen Mode Active", 
+      description: "You're betting with SOL for maximum upside potential.",
+      benefits: [
+        "Winnings compound with SOL price",
+        "Higher potential returns",
+        "Double down on conviction"
+      ]
+    }
+  }), []);
+
+  const currentContent = cardContent[mode];
+
   return (
-    <div className={cn(
-      'p-4 rounded-lg border transition-all duration-300',
-      config.bgColor,
-      className
-    )}>
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl">{config.icon}</span>
-        <div>
-          <h3 className={cn('font-bold text-lg', config.color)}>
-            {config.name}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {config.description}
-          </p>
-        </div>
-      </div>
-      
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Features:</p>
-        <ul className="space-y-1">
-          {config.features.map((feature, index) => (
-            <li key={index} className="text-sm flex items-center gap-2">
-              <span className="w-1 h-1 bg-current rounded-full opacity-60" />
-              {feature}
-            </li>
+    <Card className={cn('', className)}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <span className="text-xl">{config.icon}</span>
+          {currentContent.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          {currentContent.description}
+        </p>
+        <div className="space-y-1">
+          {currentContent.benefits.map((benefit, index) => (
+            <div key={index} className="flex items-center gap-2 text-sm">
+              <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+              <span>{benefit}</span>
+            </div>
           ))}
-        </ul>
-      </div>
-    </div>
+        </div>
+      </CardContent>
+    </Card>
   );
-}
+});
 
 interface CompactModeToggleProps {
   className?: string;
 }
 
-export function CompactModeToggle({ className }: CompactModeToggleProps) {
-  const { mode, toggleMode } = useBettingMode();
-  const theme = useTheme();
-  
+export const CompactModeToggle = React.memo<CompactModeToggleProps>(function CompactModeToggle({ 
+  className 
+}) {
+  const { mode, toggleMode, getModeConfig } = useBettingMode();
+  const config = getModeConfig();
+
+  // Memoized toggle handler
+  const handleToggle = useCallback(() => {
+    toggleMode();
+  }, [toggleMode]);
+
+  // Memoized button classes
+  const buttonClasses = useMemo(() => cn(
+    "flex items-center gap-2 px-3 py-2 rounded-full text-sm font-medium transition-colors",
+    config.color,
+    className
+  ), [config.color, className]);
+
   return (
-    <button
-      onClick={toggleMode}
-      className={cn(
-        'relative w-14 h-7 rounded-full transition-all duration-500 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg',
-        mode === 'degen' 
-          ? 'bg-orange-500 focus:ring-orange-500 shadow-orange-500/20' 
-          : 'bg-slate-800 focus:ring-slate-800 shadow-slate-800/20',
-        theme.isDramatic && 'ring-offset-slate-900',
-        className
-      )}
-      aria-label={`Switch to ${mode === 'degen' ? 'stable' : 'degen'} mode`}
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleToggle}
+      className={buttonClasses}
     >
-      <span
-        className={cn(
-          'absolute left-1 top-1 w-5 h-5 rounded-full transition-all duration-500 flex items-center justify-center text-xs shadow-md',
-          mode === 'stable' && 'transform translate-x-7',
-          theme.isDramatic ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'
-        )}
-      >
-        {mode === 'degen' ? '🚀' : '🏦'}
-      </span>
-    </button>
+      <span className="text-base">{config.icon}</span>
+      <span>{config.name}</span>
+      <Badge variant="secondary" className="text-xs">
+        {config.token}
+      </Badge>
+    </Button>
   );
-} 
+}); 

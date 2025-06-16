@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +25,7 @@ export interface MarketData {
   tags: string[];
 }
 
+// Memoize static data to prevent recreation
 const MARKET_CATEGORIES = [
   { id: 'crypto', name: 'Cryptocurrency', icon: '₿' },
   { id: 'sports', name: 'Sports', icon: '⚽' },
@@ -33,9 +34,42 @@ const MARKET_CATEGORIES = [
   { id: 'entertainment', name: 'Entertainment', icon: '🎬' },
   { id: 'finance', name: 'Finance', icon: '📈' },
   { id: 'other', name: 'Other', icon: '📊' }
-];
+] as const;
 
-export function MarketCreationForm({ onSubmit, className }: MarketCreationFormProps) {
+// Memoized error message component
+const ErrorMessage = React.memo<{ message: string }>(function ErrorMessage({ message }) {
+  return (
+    <p className="text-sm text-red-600 flex items-center gap-1">
+      <AlertCircle className="h-4 w-4" />
+      {message}
+    </p>
+  );
+});
+
+// Memoized tag component
+const TagItem = React.memo<{ tag: string; onRemove: (tag: string) => void }>(function TagItem({ tag, onRemove }) {
+  const handleRemove = useCallback(() => {
+    onRemove(tag);
+  }, [tag, onRemove]);
+
+  return (
+    <Badge variant="secondary" className="flex items-center gap-1">
+      {tag}
+      <button
+        type="button"
+        onClick={handleRemove}
+        className="ml-1 text-xs hover:text-red-600"
+      >
+        ×
+      </button>
+    </Badge>
+  );
+});
+
+export const MarketCreationForm = React.memo<MarketCreationFormProps>(function MarketCreationForm({ 
+  onSubmit, 
+  className 
+}) {
   const { getModeConfig, preferredToken } = useBettingMode();
   const modeConfig = getModeConfig();
   
@@ -54,7 +88,8 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const validateForm = (): boolean => {
+  // Memoized validation function to prevent recreation
+  const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
@@ -93,9 +128,10 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Memoized submit handler
+  const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -114,14 +150,16 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
         maximumBet: 1000,
         tags: []
       });
+      setErrors({});
     } catch (error) {
       console.error('Market creation failed:', error);
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [validateForm, onSubmit, formData]);
 
-  const addTag = () => {
+  // Memoized tag handlers
+  const addTag = useCallback(() => {
     if (newTag.trim() && !formData.tags.includes(newTag.trim()) && formData.tags.length < 5) {
       setFormData(prev => ({
         ...prev,
@@ -129,16 +167,17 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
       }));
       setNewTag('');
     }
-  };
+  }, [newTag, formData.tags]);
 
-  const removeTag = (tagToRemove: string) => {
+  const removeTag = useCallback((tagToRemove: string) => {
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
-  };
+  }, []);
 
-  const handleInputChange = (field: keyof MarketData, value: string | number) => {
+  // Memoized input change handler
+  const handleInputChange = useCallback((field: keyof MarketData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -152,7 +191,56 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
         return newErrors;
       });
     }
-  };
+  }, [errors]);
+
+  // Memoized category selection handler
+  const handleCategorySelect = useCallback((categoryId: string) => {
+    handleInputChange('category', categoryId);
+  }, [handleInputChange]);
+
+  // Memoized tag input handlers
+  const handleNewTagChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewTag(e.target.value);
+  }, []);
+
+  const handleTagKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    }
+  }, [addTag]);
+
+  // Memoized form field handlers
+  const handleTitleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('title', e.target.value);
+  }, [handleInputChange]);
+
+  const handleDescriptionChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    handleInputChange('description', e.target.value);
+  }, [handleInputChange]);
+
+  const handleEndDateChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('endDate', e.target.value);
+  }, [handleInputChange]);
+
+  const handleEndTimeChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('endTime', e.target.value);
+  }, [handleInputChange]);
+
+  const handleMinBetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('minimumBet', parseFloat(e.target.value) || 0);
+  }, [handleInputChange]);
+
+  const handleMaxBetChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    handleInputChange('maximumBet', parseFloat(e.target.value) || 0);
+  }, [handleInputChange]);
+
+  // Memoized minimum date for date input
+  const minDate = useMemo(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return tomorrow.toISOString().split('T')[0];
+  }, []);
 
   return (
     <Card className={cn('w-full max-w-2xl mx-auto', className)}>
@@ -174,15 +262,10 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
             <Input
               placeholder="e.g., Will Bitcoin reach $100,000 by end of 2024?"
               value={formData.title}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('title', e.target.value)}
+              onChange={handleTitleChange}
               className={errors.title ? 'border-red-500' : ''}
             />
-            {errors.title && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {errors.title}
-              </p>
-            )}
+            {errors.title && <ErrorMessage message={errors.title} />}
           </div>
 
           {/* Market Description */}
@@ -191,19 +274,14 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
             <textarea
               placeholder="Provide detailed information about the market conditions, resolution criteria, and any important details..."
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={handleDescriptionChange}
               className={cn(
                 "flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                 errors.description ? 'border-red-500' : ''
               )}
               rows={4}
             />
-            {errors.description && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {errors.description}
-              </p>
-            )}
+            {errors.description && <ErrorMessage message={errors.description} />}
           </div>
 
           {/* Category Selection */}
@@ -211,32 +289,23 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
             <label className="text-sm font-medium">Category</label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {MARKET_CATEGORIES.map((category) => (
-                <button
+                <Button
                   key={category.id}
                   type="button"
-                  onClick={() => handleInputChange('category', category.id)}
-                  className={cn(
-                    'flex items-center gap-2 p-3 rounded-lg border text-sm font-medium transition-colors',
-                    formData.category === category.id
-                      ? 'border-primary bg-primary/10 text-primary'
-                      : 'border-border hover:bg-muted'
-                  )}
+                  variant={formData.category === category.id ? "default" : "outline"}
+                  onClick={() => handleCategorySelect(category.id)}
+                  className="flex items-center gap-2 h-auto py-3"
                 >
-                  <span>{category.icon}</span>
-                  {category.name}
-                </button>
+                  <span className="text-lg">{category.icon}</span>
+                  <span className="text-sm">{category.name}</span>
+                </Button>
               ))}
             </div>
-            {errors.category && (
-              <p className="text-sm text-red-600 flex items-center gap-1">
-                <AlertCircle className="h-4 w-4" />
-                {errors.category}
-              </p>
-            )}
+            {errors.category && <ErrorMessage message={errors.category} />}
           </div>
 
-          {/* End Date & Time */}
-          <div className="grid md:grid-cols-2 gap-4">
+          {/* End Date and Time */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
@@ -245,15 +314,11 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
               <Input
                 type="date"
                 value={formData.endDate}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('endDate', e.target.value)}
+                onChange={handleEndDateChange}
+                min={minDate}
                 className={errors.endDate ? 'border-red-500' : ''}
               />
-              {errors.endDate && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.endDate}
-                </p>
-              )}
+              {errors.endDate && <ErrorMessage message={errors.endDate} />}
             </div>
 
             <div className="space-y-2">
@@ -264,20 +329,15 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
               <Input
                 type="time"
                 value={formData.endTime}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('endTime', e.target.value)}
+                onChange={handleEndTimeChange}
                 className={errors.endTime ? 'border-red-500' : ''}
               />
-              {errors.endTime && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.endTime}
-                </p>
-              )}
+              {errors.endTime && <ErrorMessage message={errors.endTime} />}
             </div>
           </div>
 
           {/* Betting Limits */}
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium flex items-center gap-1">
                 <DollarSign className="h-4 w-4" />
@@ -288,15 +348,10 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
                 step="0.01"
                 min="0.01"
                 value={formData.minimumBet}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('minimumBet', parseFloat(e.target.value))}
+                onChange={handleMinBetChange}
                 className={errors.minimumBet ? 'border-red-500' : ''}
               />
-              {errors.minimumBet && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.minimumBet}
-                </p>
-              )}
+              {errors.minimumBet && <ErrorMessage message={errors.minimumBet} />}
             </div>
 
             <div className="space-y-2">
@@ -309,15 +364,10 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
                 step="0.01"
                 min="0.01"
                 value={formData.maximumBet}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange('maximumBet', parseFloat(e.target.value))}
+                onChange={handleMaxBetChange}
                 className={errors.maximumBet ? 'border-red-500' : ''}
               />
-              {errors.maximumBet && (
-                <p className="text-sm text-red-600 flex items-center gap-1">
-                  <AlertCircle className="h-4 w-4" />
-                  {errors.maximumBet}
-                </p>
-              )}
+              {errors.maximumBet && <ErrorMessage message={errors.maximumBet} />}
             </div>
           </div>
 
@@ -325,31 +375,30 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-1">
               <Tag className="h-4 w-4" />
-              Tags (Optional)
+              Tags (Optional, max 5)
             </label>
             <div className="flex gap-2">
               <Input
                 placeholder="Add a tag..."
                 value={newTag}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewTag(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
+                onChange={handleNewTagChange}
+                onKeyPress={handleTagKeyPress}
+                disabled={formData.tags.length >= 5}
                 className="flex-1"
               />
-              <Button type="button" onClick={addTag} variant="outline" size="sm">
+              <Button
+                type="button"
+                onClick={addTag}
+                disabled={!newTag.trim() || formData.tags.includes(newTag.trim()) || formData.tags.length >= 5}
+                variant="outline"
+              >
                 Add
               </Button>
             </div>
             {formData.tags.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {formData.tags.map((tag) => (
-                  <Badge
-                    key={tag}
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-destructive hover:text-destructive-foreground"
-                    onClick={() => removeTag(tag)}
-                  >
-                    {tag} ×
-                  </Badge>
+                  <TagItem key={tag} tag={tag} onRemove={removeTag} />
                 ))}
               </div>
             )}
@@ -358,28 +407,25 @@ export function MarketCreationForm({ onSubmit, className }: MarketCreationFormPr
           {/* Submit Button */}
           <Button
             type="submit"
+            disabled={isSubmitting}
             className="w-full"
             size="lg"
-            disabled={isSubmitting}
           >
-            {isSubmitting ? 'Creating Market...' : `Create Market (${preferredToken})`}
+            {isSubmitting ? 'Creating Market...' : 'Create Market'}
           </Button>
 
-          {/* Info Box */}
-          <div className={cn(
-            'p-4 rounded-lg border text-sm',
-            modeConfig.bgColor
-          )}>
-            <p className="font-medium mb-2">Creating in {modeConfig.name}</p>
-            <ul className="space-y-1 text-muted-foreground">
-              <li>• Market will accept bets in {preferredToken}</li>
-              <li>• Creation fee: 0.1 {preferredToken}</li>
-              <li>• You'll be the market resolver</li>
-              <li>• Markets can't be deleted once created</li>
-            </ul>
+          {/* Market Preview */}
+          <div className="p-4 bg-muted/50 rounded-lg space-y-2">
+            <h4 className="font-medium text-sm">Market Preview</h4>
+            <p className="text-sm text-muted-foreground">
+              This market will accept bets between {formData.minimumBet} and {formData.maximumBet} {preferredToken}
+              {formData.endDate && formData.endTime && (
+                <> and will close on {new Date(`${formData.endDate}T${formData.endTime}`).toLocaleString()}</>
+              )}
+            </p>
           </div>
         </form>
       </CardContent>
     </Card>
   );
-} 
+}); 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const ValuePropSection: React.FC = () => {
+export const ValuePropSection = React.memo(function ValuePropSection() {
   return (
     <section className="w-full py-16 bg-muted/30">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
@@ -15,4 +15,4 @@ export const ValuePropSection: React.FC = () => {
       </div>
     </section>
   );
-}; 
+}); 

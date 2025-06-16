@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useCallback, ReactNode, useMemo } from 'react';
 import { TokenType } from '@/lib/jupiter';
 
 export type BettingMode = 'degen' | 'stable';
@@ -33,6 +33,7 @@ interface ModeConfig {
   border: string;
 }
 
+// Memoize static configuration to prevent recreation
 const MODE_CONFIGS: Record<BettingMode, ModeConfig> = {
   degen: {
     name: 'Degen Mode',
@@ -80,7 +81,7 @@ const MODE_CONFIGS: Record<BettingMode, ModeConfig> = {
     accent: 'text-blue-600',
     border: 'border-gray-200'
   }
-};
+} as const;
 
 const BettingModeContext = createContext<BettingModeContextType | undefined>(undefined);
 
@@ -89,12 +90,13 @@ interface BettingModeProviderProps {
   defaultMode?: BettingMode;
 }
 
-export function BettingModeProvider({ 
+export const BettingModeProvider = React.memo<BettingModeProviderProps>(function BettingModeProvider({ 
   children, 
   defaultMode = 'degen' 
-}: BettingModeProviderProps) {
+}) {
   const [mode, setModeState] = useState<BettingMode>(defaultMode);
 
+  // Memoize callbacks to prevent unnecessary re-renders
   const setMode = useCallback((newMode: BettingMode) => {
     setModeState(newMode);
     // Store preference in localStorage
@@ -116,6 +118,9 @@ export function BettingModeProvider({
     return MODE_CONFIGS[mode];
   }, [mode]);
 
+  // Memoize preferred token to prevent recalculation
+  const preferredToken = useMemo(() => getTokenForMode(), [getTokenForMode]);
+
   // Initialize mode from localStorage on mount
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -133,21 +138,22 @@ export function BettingModeProvider({
     }
   }, [setMode]);
 
-  const value: BettingModeContextType = {
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo<BettingModeContextType>(() => ({
     mode,
-    preferredToken: getTokenForMode(),
+    preferredToken,
     setMode,
     toggleMode,
     getTokenForMode,
     getModeConfig,
-  };
+  }), [mode, preferredToken, setMode, toggleMode, getTokenForMode, getModeConfig]);
 
   return (
     <BettingModeContext.Provider value={value}>
       {children}
     </BettingModeContext.Provider>
   );
-}
+});
 
 export function useBettingMode() {
   const context = useContext(BettingModeContext);

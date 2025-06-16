@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useWallet, useConnection } from '@solana/wallet-adapter-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
   SwapRequest
 } from '@/lib/jupiter';
 import { ArrowUpDown, Settings, RefreshCw } from 'lucide-react';
+import { debounce } from '@/lib/performance';
 
 interface TokenSwapProps {
   className?: string;
@@ -27,13 +28,13 @@ interface TokenSwapProps {
   onError?: (error: string) => void;
 }
 
-export function TokenSwap({
+export const TokenSwap = React.memo<TokenSwapProps>(function TokenSwap({
   className,
   fromToken = 'SOL',
   toToken = 'USDC',
   onSwapComplete,
   onError
-}: TokenSwapProps) {
+}) {
   const { connected, publicKey, signTransaction } = useWallet();
   const { connection } = useConnection();
   
@@ -48,22 +49,30 @@ export function TokenSwap({
   const [fromTokenPrice, setFromTokenPrice] = useState<number>(0);
   const [toTokenPrice, setToTokenPrice] = useState<number>(0);
 
-  // Get real-time quote
+  // Memoize token configurations to prevent recreation
+  const fromTokenConfig = useMemo(() => TOKENS[fromTokenType], [fromTokenType]);
+  const toTokenConfig = useMemo(() => TOKENS[toTokenType], [toTokenType]);
+
+  // Memoize amount calculation to prevent unnecessary recalculations
+  const amountInBaseUnits = useMemo(() => {
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) return 0;
+    return fromTokenType === 'SOL' 
+      ? Math.floor(parseFloat(amount) * 1e9)
+      : Math.floor(parseFloat(amount) * 1e6);
+  }, [amount, fromTokenType]);
+
+  // Get real-time quote with debouncing to prevent excessive API calls
   const fetchQuote = useCallback(async () => {
-    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+    if (amountInBaseUnits <= 0) {
       setQuote(null);
       return;
     }
 
     setLoading(true);
     try {
-      const amountInBaseUnits = fromTokenType === 'SOL' 
-        ? Math.floor(parseFloat(amount) * 1e9)
-        : Math.floor(parseFloat(amount) * 1e6);
-
       const quoteResponse = await getSwapQuote(
-        TOKENS[fromTokenType],
-        TOKENS[toTokenType],
+        fromTokenConfig,
+        toTokenConfig,
         amountInBaseUnits,
         slippage
       );
@@ -76,35 +85,51 @@ export function TokenSwap({
     } finally {
       setLoading(false);
     }
-  }, [amount, fromTokenType, toTokenType, slippage]);
+  }, [amountInBaseUnits, fromTokenConfig, toTokenConfig, slippage]);
 
-  // Fetch token prices
+  // Debounced quote fetching to prevent excessive API calls
+  const debouncedFetchQuote = useMemo(
+    () => debounce(fetchQuote, 500),
+    [fetchQuote]
+  );
+
+  // Fetch token prices with memoization
   const fetchPrices = useCallback(async () => {
     try {
       const [fromPrice, toPrice] = await Promise.all([
-        getTokenPrice(TOKENS[fromTokenType]),
-        getTokenPrice(TOKENS[toTokenType])
+        getTokenPrice(fromTokenConfig),
+        getTokenPrice(toTokenConfig)
       ]);
       setFromTokenPrice(fromPrice);
       setToTokenPrice(toPrice);
     } catch (error) {
       console.error('Failed to fetch prices:', error);
     }
-  }, [fromTokenType, toTokenType]);
+  }, [fromTokenConfig, toTokenConfig]);
 
-  // Auto-refresh quote every 10 seconds
+  // Auto-refresh quote with cleanup
   useEffect(() => {
-    fetchQuote();
-    const interval = setInterval(fetchQuote, 10000);
-    return () => clearInterval(interval);
-  }, [fetchQuote]);
+    debouncedFetchQuote();
+    
+    const interval = setInterval(() => {
+      if (amountInBaseUnits > 0) {
+        fetchQuote();
+      }
+    }, 10000);
+    
+    return () => {
+      clearInterval(interval);
+      debouncedFetchQuote.cancel();
+    };
+  }, [debouncedFetchQuote, fetchQuote, amountInBaseUnits]);
 
   // Fetch prices on token change
   useEffect(() => {
     fetchPrices();
   }, [fetchPrices]);
 
-  const handleSwap = async () => {
+  // Memoized swap handler
+  const handleSwap = useCallback(async () => {
     if (!connected || !publicKey || !signTransaction || !quote) {
       onError?.('Wallet not connected or quote unavailable');
       return;
@@ -112,10 +137,6 @@ export function TokenSwap({
 
     setSwapping(true);
     try {
-      const amountInBaseUnits = fromTokenType === 'SOL' 
-        ? Math.floor(parseFloat(amount) * 1e9)
-        : Math.floor(parseFloat(amount) * 1e6);
-
       const swapRequest: SwapRequest = {
         fromToken: fromTokenType,
         toToken: toTokenType,
@@ -136,28 +157,42 @@ export function TokenSwap({
     } finally {
       setSwapping(false);
     }
-  };
+  }, [connected, publicKey, signTransaction, quote, fromTokenType, toTokenType, amountInBaseUnits, slippage, connection, onSwapComplete, onError]);
 
-  const handleFlipTokens = () => {
+  // Memoized token flip handler
+  const handleFlipTokens = useCallback(() => {
     setFromTokenType(toTokenType);
     setToTokenType(fromTokenType);
     setAmount('');
     setQuote(null);
-  };
+  }, [fromTokenType, toTokenType]);
 
-  const getOutputAmount = () => {
+  // Memoized output amount calculation
+  const outputAmount = useMemo(() => {
     if (!quote) return '0';
     const decimals = toTokenType === 'SOL' ? 9 : 6;
     const outputAmount = parseInt(quote.outAmount) / Math.pow(10, decimals);
     return formatTokenAmount(outputAmount);
-  };
+  }, [quote, toTokenType]);
+
+  // Memoized input change handler
+  const handleAmountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setAmount(e.target.value);
+  }, []);
+
+  // Memoized refresh handler
+  const handleRefresh = useCallback(() => {
+    if (amountInBaseUnits > 0) {
+      fetchQuote();
+    }
+  }, [fetchQuote, amountInBaseUnits]);
 
   return (
     <Card className={cn('w-full max-w-md mx-auto', className)}>
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
           <span>Token Swap</span>
-          <Button variant="ghost" size="sm" onClick={fetchQuote} disabled={loading}>
+          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={loading}>
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </Button>
         </CardTitle>
@@ -173,13 +208,13 @@ export function TokenSwap({
             </span>
           </div>
           <div className="flex gap-2">
-                         <Input
-               type="number"
-               placeholder="0.00"
-               value={amount}
-               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAmount(e.target.value)}
-               className="flex-1"
-             />
+            <Input
+              type="number"
+              placeholder="0.00"
+              value={amount}
+              onChange={handleAmountChange}
+              className="flex-1"
+            />
             <Badge variant="outline" className="px-3 py-2 font-medium">
               {fromTokenType}
             </Badge>
@@ -210,7 +245,7 @@ export function TokenSwap({
             <Input
               type="text"
               placeholder="0.00"
-              value={getOutputAmount()}
+              value={outputAmount}
               readOnly
               className="flex-1 bg-muted"
             />
@@ -222,66 +257,33 @@ export function TokenSwap({
 
         {/* Quote Information */}
         {quote && (
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
+          <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Price Impact</span>
               <span className={cn(
-                parseFloat(priceImpact) < 1 ? 'text-green-600' : 
-                parseFloat(priceImpact) < 3 ? 'text-yellow-600' : 
-                'text-red-600'
+                'font-medium',
+                parseFloat(priceImpact) > 1 ? 'text-red-600' : 'text-green-600'
               )}>
-                {parseFloat(priceImpact).toFixed(2)}%
+                {priceImpact}%
               </span>
             </div>
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Slippage</span>
-              <span>{(slippage / 100).toFixed(1)}%</span>
+              <span className="font-medium">{(slippage / 100).toFixed(2)}%</span>
             </div>
           </div>
         )}
-
-        {/* Slippage Settings */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Slippage Tolerance</span>
-            <Settings className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex gap-2">
-            {[25, 50, 100].map((bps) => (
-              <Button
-                key={bps}
-                variant={slippage === bps ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSlippage(bps)}
-                className="flex-1"
-              >
-                {(bps / 100).toFixed(1)}%
-              </Button>
-            ))}
-          </div>
-        </div>
 
         {/* Swap Button */}
         <Button
           onClick={handleSwap}
-          disabled={!connected || !amount || !quote || swapping || loading}
+          disabled={!connected || !quote || loading || swapping || amountInBaseUnits <= 0}
           className="w-full"
           size="lg"
         >
-          {!connected ? 'Connect Wallet' :
-           swapping ? 'Swapping...' :
-           loading ? 'Getting Quote...' :
-           `Swap ${fromTokenType} for ${toTokenType}`}
+          {swapping ? 'Swapping...' : !connected ? 'Connect Wallet' : 'Swap'}
         </Button>
-
-        {/* Warning for high price impact */}
-        {quote && parseFloat(priceImpact) > 3 && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800">
-            ⚠️ High price impact ({parseFloat(priceImpact).toFixed(2)}%). 
-            Consider reducing your swap amount.
-          </div>
-        )}
       </CardContent>
     </Card>
   );
-} 
+}); 

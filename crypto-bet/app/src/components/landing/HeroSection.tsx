@@ -5,7 +5,29 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
-export const HeroSection: React.FC = () => {
+// Memoized button components to prevent recreation
+const ExploreMarketsButton = React.memo(function ExploreMarketsButton() {
+  return (
+    <Link href="/markets">
+      <Button size="lg" className="rounded-full flex items-center gap-2">
+        Explore Markets
+        <ArrowRight className="h-4 w-4" />
+      </Button>
+    </Link>
+  );
+});
+
+const TokenSwapButton = React.memo(function TokenSwapButton() {
+  return (
+    <Link href="/swap">
+      <Button variant="outline" size="lg" className="rounded-full">
+        Try Token Swap Demo
+      </Button>
+    </Link>
+  );
+});
+
+export const HeroSection = React.memo(function HeroSection() {
   return (
     <section className="w-full pt-12 pb-16">
       <div className="container mx-auto w-full max-w-[1120px] px-6 md:px-10">
@@ -23,23 +45,14 @@ export const HeroSection: React.FC = () => {
 
         {/* Primary CTA Button */}
         <div className="flex justify-center mb-8">
-          <Link href="/markets">
-            <Button size="lg" className="rounded-full flex items-center gap-2">
-              Explore Markets
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
+          <ExploreMarketsButton />
         </div>
 
         {/* Secondary CTA */}
         <div className="text-center">
-          <Link href="/swap">
-            <Button variant="outline" size="lg" className="rounded-full">
-              Try Token Swap Demo
-            </Button>
-          </Link>
+          <TokenSwapButton />
         </div>
       </div>
     </section>
   );
-}; 
+}); 
