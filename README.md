@@ -36,7 +36,7 @@ crypto-bet/program/src/lib.rs
 
 ### **Frontend (Next.js 14 + TypeScript)**
 ```
-crypto-bet/app/
+src/
 ├── Landing page with hero section and navigation
 ├── Markets app with comprehensive wallet integration  
 ├── Dual-mode UI with persistent state (Degen 🚀 vs Stable 🏦)
@@ -137,7 +137,7 @@ git clone https://github.com/yourusername/crypto-bet.git
 cd crypto-bet
 
 # Install frontend dependencies
-cd app
+cd src
 npm install
 
 # Install program dependencies
@@ -153,13 +153,13 @@ solana-test-validator
 # Deploy program (in program directory)
 anchor deploy
 
-# Start frontend (in app directory)
+# Start frontend (in src directory)
 npm run dev
 ```
 
 ### **Environment Setup**
 ```bash
-# app/.env.local
+# src/.env.local
 NEXT_PUBLIC_SOLANA_NETWORK=devnet
 NEXT_PUBLIC_PROGRAM_ID=4Gd64thyhLeqyLxDz8Ae5Z98qXdqwJrcAYkS6g3Yzy5V
 NEXT_PUBLIC_USDC_MINT=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v

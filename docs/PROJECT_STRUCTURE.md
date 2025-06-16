@@ -10,7 +10,7 @@ This document outlines the professional organization structure of the Crypto Bet
 
 ```
 crypto-bet/
-├── 📁 app/                          # Frontend Next.js Application
+├── 📁 src/                          # Frontend Next.js Application
 ├── 📁 program/                      # Solana Smart Contract (Anchor)
 ├── 📄 README.md                     # Project Overview & Setup
 ├── 📄 TODO.md                       # Development Roadmap
@@ -21,11 +21,11 @@ crypto-bet/
 
 ---
 
-## 🎨 **FRONTEND APPLICATION (`/app`)**
+## 🎨 **FRONTEND APPLICATION (`/src`)**
 
 ### **Core Structure**
 ```
-app/
+src/
 ├── 📁 src/                          # Source Code
 │   ├── 📁 app/                      # Next.js App Router
 │   ├── 📁 components/               # React Components
@@ -102,7 +102,7 @@ src/hooks/
 
 ### **Documentation Files**
 ```
-app/
+src/
 ├── 📄 SECURITY.md                   # Security Documentation (NEW)
 ├── 📄 SECURITY_AUDIT_FINAL.md       # Final Security Audit (NEW)
 ├── 📄 PERFORMANCE.md                # Performance Documentation
