@@ -4,6 +4,8 @@
 
 This document outlines the professional organization structure of the Crypto Bet platform, designed for scalability, maintainability, and enterprise-grade development.
 
+> **🚧 DEVELOPMENT STATUS**: Enterprise infrastructure is complete with comprehensive security and performance systems. Frontend functionality requires major work due to infrastructure changes breaking existing UI components.
+
 ---
 
 ## 📂 **ROOT DIRECTORY STRUCTURE**
@@ -12,6 +14,8 @@ This document outlines the professional organization structure of the Crypto Bet
 crypto-bet/
 ├── 📁 src/                          # Frontend Next.js Application
 ├── 📁 program/                      # Solana Smart Contract (Anchor)
+├── 📁 scripts/                      # Enterprise Automation Scripts
+├── 📁 docs/                         # Documentation
 ├── 📄 README.md                     # Project Overview & Setup
 ├── 📄 TODO.md                       # Development Roadmap
 ├── 📄 CONTRIBUTING.md               # Contribution Guidelines
@@ -60,17 +64,18 @@ src/components/
 │   ├── 📄 card.tsx                  # Card Component
 │   ├── 📄 input.tsx                 # Input Component
 │   ├── 📄 badge.tsx                 # Badge Component
-│   └── 📄 ...                       # Other UI Components
+│   └── 📄 dropdown-menu.tsx         # Dropdown Menu Component
 ├── 📁 providers/                    # Context Providers
 │   ├── 📄 BettingModeProvider.tsx   # Betting Mode State
 │   ├── 📄 ThemeProvider.tsx         # Theme Management
-│   ├── 📄 WalletContextProvider.tsx # Wallet Integration
-│   └── 📄 PopoverProvider.tsx       # Popover State
-├── 📁 shared/                       # Shared Components
+│   └── 📄 WalletContextProvider.tsx # Wallet Integration
+├── 📁 layout/                       # Layout Components
 │   ├── 📄 Header.tsx                # Navigation Header
+│   └── 📄 NavigationPopover.tsx     # Navigation Menu
+├── 📁 shared/                       # Shared Components
 │   ├── 📄 ModeToggle.tsx            # Mode Toggle Button
-│   ├── 📄 NavigationPopover.tsx     # Navigation Menu
-│   └── 📄 TokenSwap.tsx             # Token Swap Interface
+│   ├── 📄 TokenSwap.tsx             # Token Swap Interface
+│   └── 📄 WalletConnectButton.tsx   # Wallet Connection
 ├── 📁 landing/                      # Landing Page Components
 │   ├── 📄 HeroSection.tsx           # Hero Section
 │   ├── 📄 ValuePropSection.tsx      # Value Proposition
@@ -102,14 +107,50 @@ src/hooks/
 
 ### **Documentation Files**
 ```
-src/
-├── 📄 SECURITY.md                   # Security Documentation (NEW)
-├── 📄 SECURITY_AUDIT_FINAL.md       # Final Security Audit (NEW)
+docs/
+├── 📄 README.md                     # Frontend Documentation
+├── 📄 PROJECT_STRUCTURE.md          # This File - Project Organization
+├── 📄 SECURITY.md                   # Security Documentation
+├── 📄 SECURITY_AUDIT_FINAL.md       # Final Security Audit Report
 ├── 📄 PERFORMANCE.md                # Performance Documentation
 ├── 📄 PERFORMANCE_FINAL_AUDIT.md    # Performance Audit Results
-├── 📄 TEAM_REVIEW_SUMMARY.md        # Team Review Summary
-└── 📄 PROJECT_STRUCTURE.md          # This File (NEW)
+└── 📁 archive/                      # Archived Documentation (Local Only)
+    ├── 📄 TEAM_REVIEW_SUMMARY.md    # Team Review Summary
+    ├── 📄 MIGRATION_AUDIT_FINAL.md  # Migration Audit
+    ├── 📄 MIGRATION_COMPLETION_SUCCESS.md # Migration Success
+    ├── 📄 FINAL_IMPLEMENTATION_SUMMARY.md # Implementation Summary
+    └── 📄 FOLDER_ORGANIZATION_ASSESSMENT.md # Organization Assessment
 ```
+
+---
+
+## 🤖 **AUTOMATION SCRIPTS (`/scripts`)**
+
+### **Enterprise Automation Infrastructure**
+```
+scripts/
+├── 📁 security/                     # Security Automation
+│   └── 📄 security-audit.js         # Comprehensive Security Audit (13KB)
+├── 📁 performance/                  # Performance Automation
+│   └── 📄 performance-audit.js      # Performance Analysis (16KB)
+├── 📁 deploy/                       # Deployment Automation
+│   └── 📄 pre-deployment-audit.js   # Pre-deployment Validation (16KB)
+└── 📄 README.md                     # Scripts Documentation
+```
+
+### **Available NPM Scripts**
+```bash
+npm run audit:security      # Run comprehensive security audit
+npm run audit:performance   # Run performance analysis
+npm run audit:deployment    # Run pre-deployment validation
+npm run audit:all          # Run all audits sequentially
+```
+
+### **Script Features**
+- **Security Audit**: Leverages existing SecurityMonitor infrastructure
+- **Performance Audit**: Leverages existing PerformanceMonitor infrastructure
+- **Deployment Audit**: Comprehensive readiness validation
+- **Enterprise Integration**: Works with existing security and performance systems
 
 ---
 
