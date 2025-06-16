@@ -7,7 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useBettingMode } from '@/components/providers/BettingModeProvider';
-import { Calendar, Clock, DollarSign, Tag, AlertCircle } from 'lucide-react';
+import { Calendar, Clock, DollarSign, Tag, AlertCircle, Shield } from 'lucide-react';
+import { 
+  InputSanitizer, 
+  SecurityMonitor, 
+  TransactionSecurity,
+  EnvironmentSecurity 
+} from '@/lib/security';
 
 interface MarketCreationFormProps {
   onSubmit?: (marketData: MarketData) => void;
@@ -33,16 +39,26 @@ const MARKET_CATEGORIES = [
   { id: 'technology', name: 'Technology', icon: '💻' },
   { id: 'entertainment', name: 'Entertainment', icon: '🎬' },
   { id: 'finance', name: 'Finance', icon: '📈' },
-  { id: 'other', name: 'Other', icon: '📊' }
+  { id: 'other', name: 'Other', icon: '��' }
 ] as const;
 
-// Memoized error message component
+// 🔒 Security-enhanced error message component
 const ErrorMessage = React.memo<{ message: string }>(function ErrorMessage({ message }) {
   return (
-    <p className="text-sm text-red-600 flex items-center gap-1">
+    <div className="flex items-center gap-1 text-sm text-red-600 mt-1">
       <AlertCircle className="h-4 w-4" />
       {message}
-    </p>
+    </div>
+  );
+});
+
+// 🛡️ Security warning component
+const SecurityWarning = React.memo<{ message: string }>(function SecurityWarning({ message }) {
+  return (
+    <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md text-sm text-yellow-800">
+      <Shield className="h-4 w-4" />
+      <span>{message}</span>
+    </div>
   );
 });
 
@@ -58,7 +74,7 @@ const TagItem = React.memo<{ tag: string; onRemove: (tag: string) => void }>(fun
       <button
         type="button"
         onClick={handleRemove}
-        className="ml-1 text-xs hover:text-red-600"
+        className="ml-1 hover:text-destructive"
       >
         ×
       </button>
@@ -87,58 +103,163 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
   const [newTag, setNewTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [securityWarnings, setSecurityWarnings] = useState<string[]>([]);
 
-  // Memoized validation function to prevent recreation
+  // 🔒 Enhanced validation function with security checks
   const validateForm = useCallback((): boolean => {
     const newErrors: Record<string, string> = {};
+    const warnings: string[] = [];
 
-    if (!formData.title.trim()) {
-      newErrors.title = 'Market title is required';
-    } else if (formData.title.length < 10) {
-      newErrors.title = 'Title must be at least 10 characters';
+    // 🛡️ Validate and sanitize title
+    const titleValidation = InputSanitizer.validateMarketTitle(formData.title);
+    if (!titleValidation.isValid) {
+      newErrors.title = titleValidation.error!;
+      SecurityMonitor.logSecurityEvent('validation_failed', 'medium', {
+        field: 'title',
+        error: titleValidation.error,
+        input: formData.title.substring(0, 50) // Log only first 50 chars
+      });
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'Market description is required';
-    } else if (formData.description.length < 20) {
-      newErrors.description = 'Description must be at least 20 characters';
+    // 🛡️ Validate and sanitize description
+    const descriptionValidation = InputSanitizer.validateMarketDescription(formData.description);
+    if (!descriptionValidation.isValid) {
+      newErrors.description = descriptionValidation.error!;
+      SecurityMonitor.logSecurityEvent('validation_failed', 'medium', {
+        field: 'description',
+        error: descriptionValidation.error
+      });
     }
 
+    // 🔒 Category validation
     if (!formData.category) {
       newErrors.category = 'Please select a category';
     }
 
+    // 🔒 Date validation with security checks
     if (!formData.endDate) {
       newErrors.endDate = 'End date is required';
-    } else if (new Date(formData.endDate) <= new Date()) {
-      newErrors.endDate = 'End date must be in the future';
+    } else {
+      const endDate = new Date(formData.endDate);
+      const now = new Date();
+      const maxFutureDate = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000)); // 1 year
+
+      if (endDate <= now) {
+        newErrors.endDate = 'End date must be in the future';
+      } else if (endDate > maxFutureDate) {
+        newErrors.endDate = 'End date cannot be more than 1 year in the future';
+        warnings.push('Unusually long market duration detected');
+      }
     }
 
+    // 🔒 Time validation
     if (!formData.endTime) {
       newErrors.endTime = 'End time is required';
     }
 
-    if (formData.minimumBet <= 0) {
-      newErrors.minimumBet = 'Minimum bet must be greater than 0';
+    // 🛡️ Bet amount validation with overflow protection
+    const minBetValidation = InputSanitizer.validateBetAmount(formData.minimumBet, 0.001, 10);
+    if (!minBetValidation.isValid) {
+      newErrors.minimumBet = minBetValidation.error!;
+    }
+
+    const maxBetValidation = InputSanitizer.validateBetAmount(formData.maximumBet, 0.01, 1000);
+    if (!maxBetValidation.isValid) {
+      newErrors.maximumBet = maxBetValidation.error!;
     }
 
     if (formData.maximumBet <= formData.minimumBet) {
       newErrors.maximumBet = 'Maximum bet must be greater than minimum bet';
     }
 
+    // 🚨 Check for suspicious patterns
+    if (formData.maximumBet > 100) {
+      warnings.push('High maximum bet amount detected - ensure this is intentional');
+    }
+
+    // 🔒 Validate tags
+    for (const tag of formData.tags) {
+      const sanitizedTag = InputSanitizer.sanitizeHTML(tag);
+      if (sanitizedTag !== tag) {
+        warnings.push('Some tags contain suspicious characters and have been sanitized');
+      }
+    }
+
     setErrors(newErrors);
+    setSecurityWarnings(warnings);
+
+    // 🚨 Log security events for suspicious activity
+    if (warnings.length > 0) {
+      SecurityMonitor.logSecurityEvent('suspicious_form_data', 'medium', {
+        warnings,
+        formData: {
+          titleLength: formData.title.length,
+          descriptionLength: formData.description.length,
+          maxBet: formData.maximumBet,
+          tagCount: formData.tags.length
+        }
+      });
+    }
+
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
-  // Memoized submit handler
+  // 🔒 Enhanced submit handler with security validation
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    // 🛡️ Environment security check
+    const envCheck = EnvironmentSecurity.validateEnvironment();
+    if (!envCheck.isSecure) {
+      SecurityMonitor.logSecurityEvent('environment_security_issue', 'high', {
+        issues: envCheck.issues
+      });
+    }
+
+    if (!validateForm()) {
+      SecurityMonitor.logSecurityEvent('form_validation_failed', 'low', {
+        errorCount: Object.keys(errors).length
+      });
+      return;
+    }
+
+    // 🔒 Transaction security validation
+    const transactionValidation = TransactionSecurity.validateTransactionParams({
+      amount: formData.maximumBet,
+      operation: 'create_market'
+    });
+
+    if (!transactionValidation.isValid) {
+      SecurityMonitor.logSecurityEvent('transaction_validation_failed', 'high', {
+        errors: transactionValidation.errors
+      });
+      setErrors({ general: 'Transaction validation failed. Please check your inputs.' });
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      await onSubmit?.(formData);
+      // 🛡️ Sanitize form data before submission
+      const sanitizedData: MarketData = {
+        title: InputSanitizer.sanitizeHTML(formData.title),
+        description: InputSanitizer.sanitizeHTML(formData.description),
+        category: formData.category,
+        endDate: formData.endDate,
+        endTime: formData.endTime,
+        minimumBet: formData.minimumBet,
+        maximumBet: formData.maximumBet,
+        tags: formData.tags.map(tag => InputSanitizer.sanitizeHTML(tag))
+      };
+
+      // 🔒 Log successful form submission
+      SecurityMonitor.logSecurityEvent('market_creation_attempt', 'low', {
+        category: sanitizedData.category,
+        betRange: `${sanitizedData.minimumBet}-${sanitizedData.maximumBet}`,
+        tagCount: sanitizedData.tags.length
+      });
+
+      await onSubmit?.(sanitizedData);
+      
       // Reset form on success
       setFormData({
         title: '',
@@ -151,19 +272,38 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
         tags: []
       });
       setErrors({});
+      setSecurityWarnings([]);
+
+      SecurityMonitor.logSecurityEvent('market_creation_success', 'low', {
+        category: sanitizedData.category
+      });
+
     } catch (error) {
-      console.error('Market creation failed:', error);
+      SecurityMonitor.logSecurityEvent('market_creation_failed', 'medium', {
+        error: error instanceof Error ? error.message : 'Unknown error'
+      });
+      EnvironmentSecurity.secureLog('Market creation failed:', error);
+      setErrors({ general: 'Market creation failed. Please try again.' });
     } finally {
       setIsSubmitting(false);
     }
-  }, [validateForm, onSubmit, formData]);
+  }, [validateForm, onSubmit, formData, errors]);
 
-  // Memoized tag handlers
+  // 🔒 Enhanced tag handlers with security validation
   const addTag = useCallback(() => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim()) && formData.tags.length < 5) {
+    const sanitizedTag = InputSanitizer.sanitizeHTML(newTag.trim());
+    
+    if (sanitizedTag && !formData.tags.includes(sanitizedTag) && formData.tags.length < 5) {
+      if (sanitizedTag !== newTag.trim()) {
+        SecurityMonitor.logSecurityEvent('tag_sanitized', 'low', {
+          original: newTag.trim(),
+          sanitized: sanitizedTag
+        });
+      }
+      
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...prev.tags, sanitizedTag]
       }));
       setNewTag('');
     }
@@ -176,7 +316,7 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
     }));
   }, []);
 
-  // Memoized input change handler
+  // 🔒 Secure input change handler
   const handleInputChange = useCallback((field: keyof MarketData, value: string | number) => {
     setFormData(prev => ({
       ...prev,
@@ -191,7 +331,12 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
         return newErrors;
       });
     }
-  }, [errors]);
+
+    // Clear security warnings when user makes changes
+    if (securityWarnings.length > 0) {
+      setSecurityWarnings([]);
+    }
+  }, [errors, securityWarnings]);
 
   // Memoized category selection handler
   const handleCategorySelect = useCallback((categoryId: string) => {
@@ -242,6 +387,13 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
     return tomorrow.toISOString().split('T')[0];
   }, []);
 
+  // Memoized maximum date (1 year from now)
+  const maxDate = useMemo(() => {
+    const oneYearFromNow = new Date();
+    oneYearFromNow.setFullYear(oneYearFromNow.getFullYear() + 1);
+    return oneYearFromNow.toISOString().split('T')[0];
+  }, []);
+
   return (
     <Card className={cn('w-full max-w-2xl mx-auto', className)}>
       <CardHeader>
@@ -251,10 +403,27 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
           <Badge variant="outline" className={modeConfig.color}>
             {preferredToken} Mode
           </Badge>
+          <Shield className="h-5 w-5 text-green-600 ml-auto" />
         </CardTitle>
       </CardHeader>
 
       <CardContent>
+        {/* 🚨 Security Warnings */}
+        {securityWarnings.length > 0 && (
+          <div className="space-y-2 mb-6">
+            {securityWarnings.map((warning, index) => (
+              <SecurityWarning key={index} message={warning} />
+            ))}
+          </div>
+        )}
+
+        {/* General Error */}
+        {errors.general && (
+          <div className="mb-6">
+            <ErrorMessage message={errors.general} />
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Market Title */}
           <div className="space-y-2">
@@ -264,7 +433,12 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
               value={formData.title}
               onChange={handleTitleChange}
               className={errors.title ? 'border-red-500' : ''}
+              maxLength={100}
             />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{formData.title.length}/100 characters</span>
+              <span>🔒 XSS Protected</span>
+            </div>
             {errors.title && <ErrorMessage message={errors.title} />}
           </div>
 
@@ -280,7 +454,12 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
                 errors.description ? 'border-red-500' : ''
               )}
               rows={4}
+              maxLength={500}
             />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>{formData.description.length}/500 characters</span>
+              <span>🔒 Input Sanitized</span>
+            </div>
             {errors.description && <ErrorMessage message={errors.description} />}
           </div>
 
@@ -316,6 +495,7 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
                 value={formData.endDate}
                 onChange={handleEndDateChange}
                 min={minDate}
+                max={maxDate}
                 className={errors.endDate ? 'border-red-500' : ''}
               />
               {errors.endDate && <ErrorMessage message={errors.endDate} />}
@@ -345,8 +525,9 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
               </label>
               <Input
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="0.001"
+                min="0.001"
+                max="10"
                 value={formData.minimumBet}
                 onChange={handleMinBetChange}
                 className={errors.minimumBet ? 'border-red-500' : ''}
@@ -363,6 +544,7 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
                 type="number"
                 step="0.01"
                 min="0.01"
+                max="1000"
                 value={formData.maximumBet}
                 onChange={handleMaxBetChange}
                 className={errors.maximumBet ? 'border-red-500' : ''}
@@ -385,6 +567,7 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
                 onKeyPress={handleTagKeyPress}
                 disabled={formData.tags.length >= 5}
                 className="flex-1"
+                maxLength={20}
               />
               <Button
                 type="button"
@@ -416,12 +599,18 @@ export const MarketCreationForm = React.memo<MarketCreationFormProps>(function M
 
           {/* Market Preview */}
           <div className="p-4 bg-muted/50 rounded-lg space-y-2">
-            <h4 className="font-medium text-sm">Market Preview</h4>
+            <h4 className="font-medium text-sm flex items-center gap-2">
+              Market Preview
+              <Shield className="h-4 w-4 text-green-600" />
+            </h4>
             <p className="text-sm text-muted-foreground">
               This market will accept bets between {formData.minimumBet} and {formData.maximumBet} {preferredToken}
               {formData.endDate && formData.endTime && (
                 <> and will close on {new Date(`${formData.endDate}T${formData.endTime}`).toLocaleString()}</>
               )}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              🔒 All inputs are validated and sanitized for security
             </p>
           </div>
         </form>

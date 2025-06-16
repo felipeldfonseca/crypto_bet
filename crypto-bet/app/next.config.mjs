@@ -70,38 +70,92 @@ const nextConfig = {
   // Generate static pages where possible
   output: 'standalone',
 
+  // 🔒 ENTERPRISE-GRADE SECURITY HEADERS
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          // 🛡️ XSS Protection
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          },
+          // 🔒 Content Type Options
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          },
+          // 🚫 Clickjacking Protection
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          },
+          // 🔐 DNS Prefetch Control
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          // 🛡️ Referrer Policy
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          // 🔒 Permissions Policy (Feature Policy)
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()'
+          },
+          // 🚨 Content Security Policy (CSP)
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com",
+              "img-src 'self' data: https:",
+              "connect-src 'self' https://api.mainnet-beta.solana.com https://api.devnet.solana.com https://quote-api.jup.ag https://price.jup.ag wss://api.mainnet-beta.solana.com wss://api.devnet.solana.com",
+              "frame-ancestors 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "upgrade-insecure-requests"
+            ].join('; ')
+          },
+          // 🔐 Strict Transport Security (HSTS)
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload'
+          }
+        ],
+      },
+      // 📦 Static Assets Caching
+      {
+        source: '/static/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // 🎨 Font Optimization
+      {
+        source: '/_next/static/media/(.*)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
+
   // Environment-specific optimizations
   ...(process.env.NODE_ENV === 'production' && {
     // Production-only optimizations
     swcMinify: true,
-    
-    // Headers for performance
-    async headers() {
-      return [
-        {
-          source: '/(.*)',
-          headers: [
-            {
-              key: 'X-DNS-Prefetch-Control',
-              value: 'on'
-            },
-            {
-              key: 'X-Frame-Options',
-              value: 'DENY'
-            },
-          ],
-        },
-        {
-          source: '/static/(.*)',
-          headers: [
-            {
-              key: 'Cache-Control',
-              value: 'public, max-age=31536000, immutable',
-            },
-          ],
-        },
-      ];
-    },
   }),
 };
 
