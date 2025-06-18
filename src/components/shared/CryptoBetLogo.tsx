@@ -91,7 +91,7 @@ const getIconSource = (iconStyle: IconStyle, size: LogoSize) => {
   return iconMap[iconStyle];
 };
 
-const LogoContent: React.FC<CryptoBetLogoProps> = ({
+const LogoContent = React.memo<CryptoBetLogoProps>(({
   variant,
   size = 'medium',
   iconStyle,
@@ -147,9 +147,11 @@ const LogoContent: React.FC<CryptoBetLogoProps> = ({
       </div>
     </div>
   );
-};
+});
 
-export const CryptoBetLogo: React.FC<CryptoBetLogoProps> = (props) => {
+LogoContent.displayName = 'LogoContent';
+
+export const CryptoBetLogo = React.memo<CryptoBetLogoProps>((props) => {
   const { href = '/', ...logoProps } = props;
 
   if (href) {
@@ -161,7 +163,9 @@ export const CryptoBetLogo: React.FC<CryptoBetLogoProps> = (props) => {
   }
 
   return <LogoContent {...logoProps} />;
-};
+});
+
+CryptoBetLogo.displayName = 'CryptoBetLogo';
 
 // Convenience components for specific variants
 export const LandingLogo: React.FC<Omit<CryptoBetLogoProps, 'variant'>> = (props) => (

@@ -15,7 +15,7 @@ interface ContextAwareLogoProps {
   forceVariant?: LogoVariant;
 }
 
-export const ContextAwareLogo: React.FC<ContextAwareLogoProps> = ({
+export const ContextAwareLogo = React.memo<ContextAwareLogoProps>(({
   forceVariant,
   ...props
 }) => {
@@ -40,6 +40,8 @@ export const ContextAwareLogo: React.FC<ContextAwareLogoProps> = ({
   const variant = getVariant();
   
   return <CryptoBetLogo variant={variant} {...props} />;
-};
+});
+
+ContextAwareLogo.displayName = 'ContextAwareLogo';
 
 export default ContextAwareLogo; 
