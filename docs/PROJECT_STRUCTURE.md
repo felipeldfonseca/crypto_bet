@@ -33,6 +33,7 @@ src/
 ├── 📁 src/                          # Source Code
 │   ├── 📁 app/                      # Next.js App Router
 │   ├── 📁 components/               # React Components
+│   ├── 📁 assets/                   # Optimized Assets (fonts, icons)
 │   ├── 📁 lib/                      # Utility Libraries
 │   ├── 📁 hooks/                    # Custom React Hooks
 │   └── 📁 styles/                   # Global Styles
@@ -50,9 +51,13 @@ src/app/
 ├── 📄 layout.tsx                    # Root Layout Component
 ├── 📄 page.tsx                      # Landing Page
 ├── 📄 globals.css                   # Global Styles
+├── 📁 logo-demo/                    # Logo Showcase Page
+│   └── 📄 page.tsx                  # Logo Demo Page
 ├── 📁 markets/                      # Markets Section
+│   ├── 📄 layout.tsx                # Markets Layout
 │   └── 📄 page.tsx                  # Markets Page
 └── 📁 swap/                         # Token Swap Section
+    ├── 📄 layout.tsx                # Swap Layout
     └── 📄 page.tsx                  # Swap Page
 ```
 
@@ -75,7 +80,9 @@ src/components/
 ├── 📁 shared/                       # Shared Components
 │   ├── 📄 ModeToggle.tsx            # Mode Toggle Button
 │   ├── 📄 TokenSwap.tsx             # Token Swap Interface
-│   └── 📄 WalletConnectButton.tsx   # Wallet Connection
+│   ├── 📄 WalletConnectButton.tsx   # Wallet Connection
+│   ├── 📄 CryptoBetLogo.tsx         # Logo Component System
+│   └── 📄 ContextAwareLogo.tsx      # Context-Aware Logo
 ├── 📁 landing/                      # Landing Page Components
 │   ├── 📄 HeroSection.tsx           # Hero Section
 │   ├── 📄 ValuePropSection.tsx      # Value Proposition
@@ -97,6 +104,25 @@ src/lib/
 ├── 📄 jupiter.ts                    # Jupiter Swap Integration
 ├── 📄 performance.ts                # Performance Utilities
 └── 📄 security.ts                   # Security Utilities (NEW)
+```
+
+### **Assets Structure (`/src/assets`)**
+```
+src/assets/
+├── 📁 fonts/                        # Custom Fonts
+│   ├── 📄 etna-free-font.otf         # Etna Sans Serif Font
+│   └── 📄 etna.ts                    # Next.js Font Integration
+└── 📁 icons/                        # Logo Icons (PNG)
+    ├── 📁 250x250/                   # Standard Resolution Icons
+    │   ├── 📄 cryptobet_dark_icon.png      # Dark Mode Icon
+    │   ├── 📄 cryptobet_full_color_icon.png # Full Color Icon
+    │   ├── 📄 cryptobet_navy_icon.png      # Navy Blue Icon
+    │   └── 📄 cryptobet_orange_icon.png    # Orange Accent Icon
+    └── 📁 313x313/                   # High Resolution Icons
+        ├── 📄 cryptobet_dark_icon.png      # Dark Mode Icon (HiRes)
+        ├── 📄 cryptobet_full_color_icon.png # Full Color Icon (HiRes)
+        ├── 📄 cryptobet_navy_icon.png      # Navy Blue Icon (HiRes)
+        └── 📄 cryptobet_orange_icon.png    # Orange Accent Icon (HiRes)
 ```
 
 ### **Hooks Structure (`/src/hooks`)**
