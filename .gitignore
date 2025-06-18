@@ -113,3 +113,14 @@ Desktop.ini
 *.temp 
 # Archive folder (local only)
 docs/archive/
+
+# POC Experiments (track structure, ignore implementations)
+poc/experiments/*/node_modules/
+poc/experiments/*/.next/
+poc/experiments/*/*.log
+poc/experiments/*/dist/
+poc/experiments/*/build/
+# Keep the POC structure and documentation
+!poc/README.md
+!poc/experiments/.gitkeep
+!poc/shared/.gitkeep

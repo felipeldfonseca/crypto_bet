@@ -1,4 +1,3 @@
-import { Header } from '@/components/layout/Header';
 import { WalletContextProvider } from '@/components/providers/WalletContextProvider';
 
 export default function MarketsLayout({
@@ -8,7 +7,6 @@ export default function MarketsLayout({
 }) {
   return (
     <WalletContextProvider>
-      <Header />
       <main>{children}</main>
     </WalletContextProvider>
   );

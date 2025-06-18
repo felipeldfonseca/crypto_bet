@@ -1,5 +1,4 @@
 import React from 'react';
-import { Header } from '@/components/layout/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
 import { ValuePropSection } from '@/components/landing/ValuePropSection';
 import { SpeedSection } from '@/components/landing/SpeedSection';

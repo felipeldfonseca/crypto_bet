@@ -8,6 +8,7 @@ import { NavigationPopover, PopoverProvider } from './NavigationPopover';
 import { WalletConnectButton } from '@/components/shared/WalletConnectButton';
 import { CompactModeToggle } from '@/components/shared/ModeToggle';
 import { useTheme } from '@/components/providers/ThemeProvider';
+import { ContextAwareLogo } from '@/components/shared/ContextAwareLogo';
 
 interface HeaderProps {
   className?: string;
@@ -30,12 +31,7 @@ const NAVIGATION_ITEMS = [
 // Memoized logo component
 const Logo = React.memo(function Logo() {
   return (
-    <Link href="/" className="flex items-center gap-2">
-      <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center">
-        <span className="text-white font-bold text-sm">CB</span>
-      </div>
-      <span className="font-bold text-xl">Crypto Bet</span>
-    </Link>
+    <ContextAwareLogo size="small" href="/" />
   );
 });
 
